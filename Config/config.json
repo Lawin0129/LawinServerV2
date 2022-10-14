@@ -1,0 +1,9 @@
+{
+    "moderators": ["discordId"],
+    "discord": {
+        "bot_token": ""
+    },
+    "mongodb": {
+        "database": "mongodb://127.0.0.1/lawindb"
+    }
+}

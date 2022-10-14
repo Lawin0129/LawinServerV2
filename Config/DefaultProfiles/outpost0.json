@@ -1,0 +1,24 @@
+{
+  "created": "",
+  "updated": "",
+  "rvn": 0,
+  "wipeNumber": 1,
+  "accountId": "",
+  "profileId": "outpost0",
+  "version": "no_version",
+  "items": {
+    "Token:lawinserver": {
+      "templateId": "Token:lawinserver",
+      "attributes": {
+        "item_seen": true
+      },
+      "quantity": 1
+    }
+  },
+  "stats": {
+    "attributes": {
+      "inventory_limit_bonus": 0
+    }
+  },
+  "commandRevision": 0
+}

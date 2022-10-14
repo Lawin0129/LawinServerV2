@@ -1,0 +1,40 @@
+{
+  "name": "lawinserverv2",
+  "version": "1.0.0",
+  "description": "LawinServer V2 is a fortnite backend that features an account system and xmpp.",
+  "main": "index.js",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "cookie-parser": "^1.4.6",
+    "discord.js": "^13.7.0",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.6.5",
+    "path": "^0.12.7",
+    "uuid": "^9.0.0",
+    "ws": "^8.9.0",
+    "xml-parser": "^1.2.1",
+    "xmlbuilder": "^15.1.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lawin0129/LawinServerV2.git"
+  },
+  "keywords": [
+    "fortnite",
+    "backend",
+    "node",
+    "server",
+    "v2"
+  ],
+  "author": "Lawin0129",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Lawin0129/LawinServerV2/issues"
+  },
+  "homepage": "https://github.com/Lawin0129/LawinServerV2#readme"
+}
