@@ -53,7 +53,7 @@ app.post("/account/api/oauth/token", async (req, res) => {
             );
             const { username: email, password: password } = req.body;
 
-            req.user = await User.findOne({ email: email }).lean();
+            req.user = await User.findOne({ email: email.toLowerCase() }).lean();
 
             if (!req.user) {
                 return error.createError(
