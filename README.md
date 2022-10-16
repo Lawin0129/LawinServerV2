@@ -33,6 +33,9 @@
 3) You have to get your discord id and replace discordId with it.
 4) You can set multiple moderators like this `["discordId","discordId2"]`
 
+## Hosting for others
+You are allowed to host for others, however please don't modify `responses/contentpages.json`
+
 ## How to host LawinServerV2
 1) Install [NodeJS](https://nodejs.org/en/) and [MongoDB](https://www.mongodb.com/try/download/community).
 2) Download and Extract LawinServerV2 to a safe location.
