@@ -41,4 +41,4 @@
 5) Open it, set your discord bot token (DO NOT SHARE THIS TOKEN) and save it. The discord bot will be used for creating accounts and managing your account.
 6) Run "start.bat", if there is no errors, it should work.
 7) Use something to redirect the Fortnite servers to localhost:8080 (Which could be fiddler, ssl bypass that redirects servers, etc...)
-8) When Fortnite launches and is connected to the backend, enter your email and password (alternatively an exchange code can be used) then press login. It should let you in and everything should be working fine.
+8) When Fortnite launches and is connected to the backend, enter your email and password (or launch with an exchange code) then press login. It should let you in and everything should be working fine.
