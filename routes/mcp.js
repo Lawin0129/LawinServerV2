@@ -529,6 +529,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
         case "GetMcpTimeForLogin": break;
         case "IncrementNamedCounterStat": break;
         case "SetHardcoreModifier": break;
+        case "SetMtxPlatform": break;
 
         default:
             error.createError(
