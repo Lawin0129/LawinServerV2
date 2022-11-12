@@ -530,6 +530,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
         case "IncrementNamedCounterStat": break;
         case "SetHardcoreModifier": break;
         case "SetMtxPlatform": break;
+        case "PurchaseCatalogEntry": break;
 
         default:
             error.createError(

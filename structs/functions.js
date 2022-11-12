@@ -1,6 +1,8 @@
 const XMLBuilder = require("xmlbuilder");
 const uuid = require("uuid");
 const bcrypt = require("bcrypt");
+const fs = require("fs");
+const path = require("path");
 
 const User = require("../model/user.js");
 const Profile = require("../model/profiles.js");
@@ -145,6 +147,85 @@ function getContentPages(req) {
     return contentpages;
 }
 
+function getItemShop() {
+    const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "responses", "catalog.json")).toString());
+    const CatalogConfig = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "Config", "catalog_config.json").toString()));
+
+    try {
+        for (var value in CatalogConfig) {
+            if (Array.isArray(CatalogConfig[value].itemGrants)) {
+                if (CatalogConfig[value].itemGrants.length != 0) {
+                    const CatalogEntry = {"devName":"","offerId":"","fulfillmentIds":[],"dailyLimit":-1,"weeklyLimit":-1,"monthlyLimit":-1,"categories":[],"prices":[{"currencyType":"MtxCurrency","currencySubType":"","regularPrice":0,"finalPrice":0,"saleExpiration":"9999-12-02T01:12:00Z","basePrice":0}],"matchFilter":"","filterWeight":0,"appStoreId":[],"requirements":[],"offerType":"StaticPrice","giftInfo":{"bIsEnabled":false,"forcedGiftBoxTemplateId":"","purchaseRequirements":[],"giftRecordIds":[]},"refundable":true,"metaInfo":[],"displayAssetPath":"","itemGrants":[],"sortPriority":0,"catalogGroupPriority":0};
+
+                    if (value.toLowerCase().startsWith("daily")) {
+                        let store = catalog.storefronts.find(p => p.name == "BRDailyStorefront");
+                        
+                        if (store) {
+                            let i = catalog.storefronts.findIndex(p => p.name == "BRDailyStorefront");
+
+                            CatalogEntry.requirements = [];
+                            CatalogEntry.itemGrants = [];
+
+                            for (var x in CatalogConfig[value].itemGrants) {
+                                if (typeof CatalogConfig[value].itemGrants[x] == "string") {
+                                    if (CatalogConfig[value].itemGrants[x].length != 0) {
+                                        CatalogEntry.devName = CatalogConfig[value].itemGrants[0]
+                                        CatalogEntry.offerId = CatalogConfig[value].itemGrants[0]
+
+                                        CatalogEntry.requirements.push({ "requirementType": "DenyOnItemOwnership", "requiredId": CatalogConfig[value].itemGrants[x], "minQuantity": 1 })
+                                        CatalogEntry.itemGrants.push({ "templateId": CatalogConfig[value].itemGrants[x], "quantity": 1 });
+                                    }
+                                }
+                            }
+
+                            CatalogEntry.prices[0].basePrice = CatalogConfig[value].price
+                            CatalogEntry.prices[0].regularPrice = CatalogConfig[value].price
+                            CatalogEntry.prices[0].finalPrice = CatalogConfig[value].price
+
+                            if (CatalogEntry.itemGrants.length != 0) {
+                                catalog.storefronts[i].catalogEntries.push(CatalogEntry);
+                            }
+                        }
+                    }
+
+                    if (value.toLowerCase().startsWith("featured")) {
+                        let store = catalog.storefronts.find(p => p.name == "BRWeeklyStorefront");
+                        
+                        if (store) {
+                            let i = catalog.storefronts.findIndex(p => p.name == "BRWeeklyStorefront");
+
+                            CatalogEntry.requirements = [];
+                            CatalogEntry.itemGrants = [];
+
+                            for (var x in CatalogConfig[value].itemGrants) {
+                                if (typeof CatalogConfig[value].itemGrants[x] == "string") {
+                                    if (CatalogConfig[value].itemGrants[x].length != 0) {
+                                        CatalogEntry.devName = CatalogConfig[value].itemGrants[0]
+                                        CatalogEntry.offerId = CatalogConfig[value].itemGrants[0]
+
+                                        CatalogEntry.requirements.push({ "requirementType": "DenyOnItemOwnership", "requiredId": CatalogConfig[value].itemGrants[x], "minQuantity": 1 })
+                                        CatalogEntry.itemGrants.push({ "templateId": CatalogConfig[value].itemGrants[x], "quantity": 1 });
+                                    }
+                                }
+                            }
+
+                            CatalogEntry.prices[0].basePrice = CatalogConfig[value].price
+                            CatalogEntry.prices[0].regularPrice = CatalogConfig[value].price
+                            CatalogEntry.prices[0].finalPrice = CatalogConfig[value].price
+
+                            if (CatalogEntry.itemGrants.length != 0) {
+                                catalog.storefronts[i].catalogEntries.push(CatalogEntry);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } catch (err) {}
+
+    return catalog;
+}
+
 function MakeID() {
     return uuid.v4();
 }
@@ -251,6 +332,7 @@ module.exports = {
     sleep,
     GetVersionInfo,
     getContentPages,
+    getItemShop,
     MakeID,
     sendXmppMessageToAll,
     sendXmppMessageToClient,
