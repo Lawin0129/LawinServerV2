@@ -9,6 +9,11 @@ const log = require("./structs/log.js");
 const error = require("./structs/error.js");
 const functions = require("./structs/functions.js");
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.use(cookieParser());
+
 global.JWT_SECRET = "LAWIN_BACKEND";
 const PORT = 8080;
 
