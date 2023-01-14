@@ -7,6 +7,7 @@ const app = express();
 const log = require("../structs/log.js");
 const functions = require("../structs/functions.js");
 
+const tokens = require("../model/tokens.js");
 const User = require("../model/user.js");
 const Friends = require("../model/friends.js");
 
@@ -91,8 +92,10 @@ wss.on('connection', async (ws) => {
                 if (!functions.DecodeBase64(msg.root.content)) return Error(ws);
                 if (!functions.DecodeBase64(msg.root.content).includes("\u0000")) return Error(ws);
 
+                var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
+
                 var decodedBase64 = functions.DecodeBase64(msg.root.content).split("\u0000");
-                var object = global.accessTokens.find(i => i.token == decodedBase64[2]);
+                var object = jwtTokens.accessTokens.find(i => i.token == decodedBase64[2]);
                 if (!object) return Error(ws);
 
                 var user = await User.findOne({ accountId: object.accountId });

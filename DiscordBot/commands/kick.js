@@ -1,4 +1,5 @@
 const { MessageEmbed } = require("discord.js");
+const tokens = require("../../model/tokens.js");
 const User = require("../../model/user.js");
 const config = require("../../Config/config.json");
 
@@ -28,11 +29,20 @@ module.exports = {
         if (targetUser) {
             let removed = false;
 
-            if (global.accessTokens.find(i => i.accountId == targetUser.accountId)) {
-                global.accessTokens.splice(global.accessTokens.findIndex(i => i.accountId == targetUser.accountId), 1);
-                global.refreshTokens.splice(global.refreshTokens.findIndex(i => i.accountId == targetUser.accountId), 1);
+            var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true } });
+
+            if (jwtTokens.accessTokens.find(i => i.accountId == targetUser.accountId)) {
+                let index = jwtTokens.accessTokens.findIndex(i => i.accountId == targetUser.accountId);
+                await jwtTokens.updateOne({ [`accessTokens.${index}`]: {"0":"remove"} });
+                await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
 
                 removed = true;
+            }
+
+            if (jwtTokens.refreshTokens.find(i => i.accountId == targetUser.accountId)) {
+                let index = jwtTokens.refreshTokens.findIndex(i => i.accountId == targetUser.accountId);
+                await jwtTokens.updateOne({ [`refreshTokens.${index}`]: {"0":"remove"} });
+                await jwtTokens.updateOne({ $pull: { "refreshTokens": {"0":"remove"} } });
             }
 
             if (global.Clients.find(client => client.accountId == targetUser.accountId)) {

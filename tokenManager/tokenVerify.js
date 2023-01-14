@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 
+const tokens = require("../model/tokens.js");
 const User = require("../model/user.js");
 const error = require("../structs/error.js");
 
@@ -11,11 +12,15 @@ async function verifyToken(req, res, next) {
     );
 
     const token = req.headers["authorization"].split("bearer eg1~")[1];
+    var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
 
     try {
-        const decodedToken = jwt.verify(token, global.JWT_SECRET);
+        const decodedToken = jwt.decode(token);
 
-        if (!global.accessTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
+        if (!jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
+
+        var creation_date = new Date(decodedToken.creation_date);
+        if (DateAddHours(creation_date, decodedToken.hours_expire).getTime() <= new Date().getTime()) throw new Error("Expired token.")
 
         req.user = await User.findOne({ accountId: decodedToken.sub }).lean();
 
@@ -27,7 +32,11 @@ async function verifyToken(req, res, next) {
 
         next();
     } catch (err) {
-        if (global.accessTokens.find(i => i.token == `eg1~${token}`)) global.accessTokens.splice(global.accessTokens.findIndex(i => i.token == `eg1~${token}`), 1);
+        if (jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) {
+            let index = jwtTokens.accessTokens.findIndex(i => i.token == `eg1~${token}`);
+            await jwtTokens.updateOne({ [`accessTokens.${index}`]: {"0":"remove"} });
+            await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
+        }
         
         return error.createError(
             "errors.com.epicgames.common.authorization.authorization_failed",
@@ -45,13 +54,17 @@ async function verifyClient(req, res, next) {
     );
 
     const token = req.headers["authorization"].split("bearer eg1~")[1];
+    var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
 
     try {
-        const decodedToken = jwt.verify(token, global.JWT_SECRET);
+        const decodedToken = jwt.decode(token);
 
-        if (!global.accessTokens.find(i => i.token == `eg1~${token}`) && !global.clientTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
+        if (!jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`) && !jwtTokens.clientTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
 
-        if (global.accessTokens.find(i => i.token == `eg1~${token}`)) {
+        var creation_date = new Date(decodedToken.creation_date);
+        if (DateAddHours(creation_date, decodedToken.hours_expire).getTime() <= new Date().getTime()) throw new Error("Expired token.")
+
+        if (jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) {
             req.user = await User.findOne({ accountId: decodedToken.sub }).lean();
 
             if (req.user.banned == true) return error.createError(
@@ -63,8 +76,16 @@ async function verifyClient(req, res, next) {
 
         next();
     } catch (err) {
-        if (global.accessTokens.find(i => i.token == `eg1~${token}`)) global.accessTokens.splice(global.accessTokens.findIndex(i => i.token == `eg1~${token}`), 1);
-        if (global.clientTokens.find(i => i.token == `eg1~${token}`)) global.clientTokens.splice(global.clientTokens.findIndex(i => i.token == `eg1~${token}`), 1);
+        if (jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) {
+            let index = jwtTokens.accessTokens.findIndex(i => i.token == `eg1~${token}`);
+            await jwtTokens.updateOne({ [`accessTokens.${index}`]: {"0":"remove"} });
+            await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
+        }
+        if (jwtTokens.clientTokens.find(i => i.token == `eg1~${token}`)) {
+            let index = jwtTokens.clientTokens.findIndex(i => i.token == `eg1~${token}`);
+            await jwtTokens.updateOne({ [`clientTokens.${index}`]: {"0":"remove"} });
+            await jwtTokens.updateOne({ $pull: { "clientTokens": {"0":"remove"} } });
+        }
         
         return error.createError(
             "errors.com.epicgames.common.authorization.authorization_failed",
@@ -72,6 +93,13 @@ async function verifyClient(req, res, next) {
             [req.originalUrl], 1032, undefined, 401, res
         );
     }
+}
+
+function DateAddHours(pdate, number) {
+    var date = pdate;
+    date.setHours(date.getHours() + number);
+
+    return date;
 }
 
 module.exports = {

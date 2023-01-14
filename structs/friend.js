@@ -8,6 +8,7 @@ async function validateFriendAdd(accountId, friendId) {
 
     if (sender.list.accepted.find(i => i.accountId == receiver.accountId) || receiver.list.accepted.find(i => i.accountId == sender.accountId)) return false;
     if (sender.list.blocked.find(i => i.accountId == receiver.accountId) || receiver.list.blocked.find(i => i.accountId == sender.accountId)) return false;
+    if (sender.accountId == receiver.accountId) return false;
 
     return true;
 }
@@ -26,6 +27,7 @@ async function validateFriendBlock(accountId, friendId) {
     if (!sender || !receiver) return false;
 
     if (sender.list.blocked.find(i => i.accountId == receiver.accountId)) return false;
+    if (sender.accountId == receiver.accountId) return false;
 
     return true;
 }

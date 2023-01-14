@@ -6,6 +6,7 @@ const bcrypt = require("bcrypt");
 const error = require("../structs/error.js");
 const functions = require("../structs/functions.js");
 
+const tokens = require("../model/tokens.js");
 const tokenCreation = require("../tokenManager/tokenCreation.js");
 const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 const User = require("../model/user.js");
@@ -27,11 +28,17 @@ app.post("/account/api/oauth/token", async (req, res) => {
         case "client_credentials":
             var ip = req.ip;
 
-            if (global.clientTokens.find(i => i.ip == ip)) global.clientTokens.splice(global.clientTokens.findIndex(i => i.ip == ip), 1);
+            var jwtTokens = await tokens.findOne({ clientTokens: { $exists: true }});
 
-            const token = tokenCreation.createClient(clientId, req.body.grant_type, "4h")
+            if (jwtTokens.clientTokens.find(i => i.ip == ip)) {
+                let index = jwtTokens.clientTokens.findIndex(i => i.ip == ip);
+                await jwtTokens.updateOne({ [`clientTokens.${index}`]: {"0":"remove"} });
+                await jwtTokens.updateOne({ $pull: { "clientTokens": {"0":"remove"} } });
+            }
 
-            global.clientTokens.push({ token: `eg1~${token}`, ip: ip });
+            const token = tokenCreation.createClient(clientId, req.body.grant_type, 4) // expires in 4 hours
+
+            await jwtTokens.updateOne({ $push: { clientTokens: { token: `eg1~${token}`, ip: ip } } })
 
             res.json({
                 access_token: `eg1~${token}`,
@@ -80,13 +87,21 @@ app.post("/account/api/oauth/token", async (req, res) => {
             );
 
             const refresh_token = req.body.refresh_token;
+            var jwtTokens = await tokens.findOne({ refreshTokens: { $exists: true }});
 
             try {
-                jwt.verify(refresh_token.replace("eg1~", ""), global.JWT_SECRET);
+                const decodedToken = jwt.decode(refresh_token.replace("eg1~", ""));
 
-                if (!global.refreshTokens.find(i => i.token == refresh_token)) throw new Error("Refresh token invalid.");
+                var creation_date = new Date(decodedToken.creation_date);
+                if (DateAddHours(creation_date, decodedToken.hours_expire).getTime() <= new Date().getTime()) throw new Error("Expired token.")
+
+                if (!jwtTokens.refreshTokens.find(i => i.token == refresh_token)) throw new Error("Refresh token invalid.");
             } catch (err) {
-                if (global.refreshTokens.find(i => i.token == refresh_token)) global.refreshTokens.splice(global.refreshTokens.findIndex(i => i.token == refresh_token), 1);
+                if (jwtTokens.refreshTokens.find(i => i.token == refresh_token)) {
+                    let index = jwtTokens.refreshTokens.findIndex(i => i.token == refresh_token);
+                    await jwtTokens.updateOne({ [`refreshTokens.${index}`]: {"0":"remove"} });
+                    await jwtTokens.updateOne({ $pull: { "refreshTokens": {"0":"remove"} } });
+                }
 
                 error.createError(
                     "errors.com.epicgames.account.auth_token.invalid_refresh_token",
@@ -97,7 +112,7 @@ app.post("/account/api/oauth/token", async (req, res) => {
                 return;
             }
 
-            var object = global.refreshTokens.find(i => i.token == refresh_token);
+            var object = jwtTokens.refreshTokens.find(i => i.token == refresh_token);
             req.user = await User.findOne({ accountId: object.accountId }).lean();
         break;
 
@@ -131,14 +146,20 @@ app.post("/account/api/oauth/token", async (req, res) => {
         return;
     }
 
-    if (global.refreshTokens.find(i => i.accountId == req.user.accountId)) global.refreshTokens.splice(global.refreshTokens.findIndex(i => i.accountId == req.user.accountId), 1);
+    var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
+
+    if (jwtTokens.refreshTokens.find(i => i.accountId == req.user.accountId)) {
+        let index = jwtTokens.refreshTokens.findIndex(i => i.accountId == req.user.accountId);
+        await jwtTokens.updateOne({ [`refreshTokens.${index}`]: {"0":"remove"} });
+        await jwtTokens.updateOne({ $pull: { "refreshTokens": {"0":"remove"} } });
+    }
 
     const deviceId = functions.MakeID().replace(/-/ig, "");
-    const accessToken = tokenCreation.createAccess(req.user, clientId, req.body.grant_type, deviceId, "8h");
-    const refreshToken = tokenCreation.createRefresh(req.user, clientId, req.body.grant_type, deviceId, "24h");
+    const accessToken = tokenCreation.createAccess(req.user, clientId, req.body.grant_type, deviceId, 8); // expires in 8 hours
+    const refreshToken = tokenCreation.createRefresh(req.user, clientId, req.body.grant_type, deviceId, 24); // expires in 24 hours
 
-    global.accessTokens.push({ accountId: req.user.accountId, token: `eg1~${accessToken}` });
-    global.refreshTokens.push({ accountId: req.user.accountId, token: `eg1~${refreshToken}` });
+    await jwtTokens.updateOne({ $push: { accessTokens: { accountId: req.user.accountId, token: `eg1~${accessToken}` } } });
+    await jwtTokens.updateOne({ $push: { refreshTokens: { accountId: req.user.accountId, token: `eg1~${refreshToken}` } } });
 
     res.json({
         access_token: `eg1~${accessToken}`,
@@ -171,8 +192,8 @@ app.get("/account/api/oauth/verify", verifyToken, async (req, res) => {
         internal_client: true,
         client_service: "fortnite",
         account_id: req.user.accountId,
-        expires_in: 28800,
-        expires_at: GetDateAddHours(8),
+        expires_in: ((DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).getTime()) - (new Date().getTime())) / 1000,
+        expires_at: DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).toISOString(),
         auth_method: decodedToken.am,
         display_name: req.user.username,
         app: "fortnite",
@@ -209,11 +230,20 @@ app.get("/account/api/oauth/exchange", verifyToken, async (req, res) => {
 app.delete("/account/api/oauth/sessions/kill", verifyToken, async (req, res) => {
     var token = req.headers["authorization"].split("bearer ")[1];
 
+    var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }});
+
     switch (req.query.killType) {
         case "ALL":
-            for (var i in global.accessTokens) {
-                if (global.accessTokens[i].accountId == req.user.accountId) {
-                    global.accessTokens.splice(Number(i), 1);
+            for (var i in jwtTokens.accessTokens) {
+                if (jwtTokens.accessTokens[i].accountId == req.user.accountId) {
+                    await jwtTokens.updateOne({ [`accessTokens.${i}`]: {"0":"remove"} });
+                    await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
+
+                    if (jwtTokens.refreshTokens.find(i => i.accountId == req.user.accountId)) {
+                        let index = jwtTokens.refreshTokens.findIndex(i => i.accountId == req.user.accountId);
+                        await jwtTokens.updateOne({ [`refreshTokens.${index}`]: {"0":"remove"} });
+                        await jwtTokens.updateOne({ $pull: { "refreshTokens": {"0":"remove"} } });
+                    }
 
                     var client = global.Clients.find(x => x.accountId == req.user.accountId);
                     if (client) client.client.close();
@@ -224,13 +254,14 @@ app.delete("/account/api/oauth/sessions/kill", verifyToken, async (req, res) => 
         break;
 
         case "OTHERS":
-            for (var i in global.accessTokens) {
-                if (global.accessTokens[i].accountId == req.user.accountId) {
-                    if (global.accessTokens[i].token != token) {
-                        var client = global.Clients.find(x => x.token == global.accessTokens[i].token);
+            for (var i in jwtTokens.accessTokens) {
+                if (jwtTokens.accessTokens[i].accountId == req.user.accountId) {
+                    if (jwtTokens.accessTokens[i].token != token) {
+                        var client = global.Clients.find(x => x.token == jwtTokens.accessTokens[i].token);
                         if (client) client.client.close();
 
-                        global.accessTokens.splice(Number(i), 1);
+                        await jwtTokens.updateOne({ [`accessTokens.${i}`]: {"0":"remove"} });
+                        await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
                     }
                 }
             }
@@ -239,9 +270,16 @@ app.delete("/account/api/oauth/sessions/kill", verifyToken, async (req, res) => 
         break;
 
         case "ALL_ACCOUNT_CLIENT":
-            for (var i in global.accessTokens) {
-                if (global.accessTokens[i].accountId == req.user.accountId) {
-                    global.accessTokens.splice(Number(i), 1);
+            for (var i in jwtTokens.accessTokens) {
+                if (jwtTokens.accessTokens[i].accountId == req.user.accountId) {
+                    await jwtTokens.updateOne({ [`accessTokens.${i}`]: {"0":"remove"} });
+                    await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
+
+                    if (jwtTokens.refreshTokens.find(i => i.accountId == req.user.accountId)) {
+                        let index = jwtTokens.refreshTokens.findIndex(i => i.accountId == req.user.accountId);
+                        await jwtTokens.updateOne({ [`refreshTokens.${index}`]: {"0":"remove"} });
+                        await jwtTokens.updateOne({ $pull: { "refreshTokens": {"0":"remove"} } });
+                    }
 
                     var client = global.Clients.find(x => x.accountId == req.user.accountId);
                     if (client) client.client.close();
@@ -252,13 +290,14 @@ app.delete("/account/api/oauth/sessions/kill", verifyToken, async (req, res) => 
         break;
 
         case "OTHERS_ACCOUNT_CLIENT":
-            for (var i in global.accessTokens) {
-                if (global.accessTokens[i].accountId == req.user.accountId) {
-                    if (global.accessTokens[i].token != token) {
-                        var client = global.Clients.find(x => x.token == global.accessTokens[i].token);
+            for (var i in jwtTokens.accessTokens) {
+                if (jwtTokens.accessTokens[i].accountId == req.user.accountId) {
+                    if (jwtTokens.accessTokens[i].token != token) {
+                        var client = global.Clients.find(x => x.token == jwtTokens.accessTokens[i].token);
                         if (client) client.client.close();
 
-                        global.accessTokens.splice(Number(i), 1);
+                        await jwtTokens.updateOne({ [`accessTokens.${i}`]: {"0":"remove"} });
+                        await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
                     }
                 }
             }
@@ -267,13 +306,14 @@ app.delete("/account/api/oauth/sessions/kill", verifyToken, async (req, res) => 
         break;
 
         case "OTHERS_ACCOUNT_CLIENT_SERVICE":
-            for (var i in global.accessTokens) {
-                if (global.accessTokens[i].accountId == req.user.accountId) {
-                    if (global.accessTokens[i].token != token) {
-                        var client = global.Clients.find(x => x.token == global.accessTokens[i].token);
+            for (var i in jwtTokens.accessTokens) {
+                if (jwtTokens.accessTokens[i].accountId == req.user.accountId) {
+                    if (jwtTokens.accessTokens[i].token != token) {
+                        var client = global.Clients.find(x => x.token == jwtTokens.accessTokens[i].token);
                         if (client) client.client.close();
 
-                        global.accessTokens.splice(Number(i), 1);
+                        await jwtTokens.updateOne({ [`accessTokens.${i}`]: {"0":"remove"} });
+                        await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
                     }
                 }
             }
@@ -294,16 +334,29 @@ app.delete("/account/api/oauth/sessions/kill", verifyToken, async (req, res) => 
 app.delete("/account/api/oauth/sessions/kill/:token", verifyClient, async (req, res) => {
     var token = req.headers["authorization"].split("bearer ")[1];
 
-    if (global.accessTokens.find(i => i.token == token)) {
-        var object = global.accessTokens.find(i => i.token == token);
+    var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
+
+    if (jwtTokens.accessTokens.find(i => i.token == token)) {
+        var object = jwtTokens.accessTokens.find(i => i.token == token);
 
         var client = global.Clients.find(i => i.token == object.token);
         if (client) client.client.close();
 
-        global.accessTokens.splice(global.accessTokens.findIndex(i => i.token == token), 1);
-        global.refreshTokens.splice(global.refreshTokens.findIndex(i => i.accountId == object.accountId), 1);
+        let index = jwtTokens.accessTokens.findIndex(i => i.token == token);
+        await jwtTokens.updateOne({ [`accessTokens.${index}`]: {"0":"remove"} });
+        await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
+
+        if (jwtTokens.refreshTokens.find(i => i.accountId == object.accountId)) {
+            let refreshindex = jwtTokens.refreshTokens.findIndex(i => i.accountId == object.accountId);
+            await jwtTokens.updateOne({ [`refreshTokens.${refreshindex}`]: {"0":"remove"} });
+            await jwtTokens.updateOne({ $pull: { "refreshTokens": {"0":"remove"} } });
+        }
     }
-    if (global.clientTokens.find(i => i.token == token)) global.clientTokens.splice(global.clientTokens.findIndex(i => i.token == token), 1);
+    if (jwtTokens.clientTokens.find(i => i.token == token)) {
+        let index = jwtTokens.clientTokens.findIndex(i => i.token == token);
+        await jwtTokens.updateOne({ [`clientTokens.${index}`]: {"0":"remove"} });
+        await jwtTokens.updateOne({ $pull: { "clientTokens": {"0":"remove"} } });
+    }
 
     res.status(204).end();
 });
@@ -313,6 +366,13 @@ function GetDateAddHours(number) {
     date.setHours(date.getHours() + number);
 
     return date.toISOString();
+}
+
+function DateAddHours(pdate, number) {
+    var date = pdate;
+    date.setHours(date.getHours() + number);
+
+    return date;
 }
 
 module.exports = app;

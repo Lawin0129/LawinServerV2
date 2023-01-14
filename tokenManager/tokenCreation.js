@@ -10,8 +10,10 @@ function createClient(clientId, grant_type, expiresIn) {
         "clid": clientId,
         "ic": true,
         "am": grant_type,
-        "jti": functions.MakeID().replace(/-/ig, "")
-    }, global.JWT_SECRET, { expiresIn: expiresIn })
+        "jti": functions.MakeID().replace(/-/ig, ""),
+        "creation_date": new Date(),
+        "hours_expire": expiresIn
+    }, global.JWT_SECRET)
 }
 
 function createAccess(user, clientId, grant_type, deviceId, expiresIn) {
@@ -29,8 +31,10 @@ function createAccess(user, clientId, grant_type, deviceId, expiresIn) {
         "clsvc": "fortnite",
         "t": "s",
         "ic": true,
-        "jti": functions.MakeID().replace(/-/ig, "")
-    }, global.JWT_SECRET, { expiresIn: expiresIn })
+        "jti": functions.MakeID().replace(/-/ig, ""),
+        "creation_date": new Date(),
+        "hours_expire": expiresIn
+    }, global.JWT_SECRET)
 }
 
 function createRefresh(user, clientId, grant_type, deviceId, expiresIn) {
@@ -40,8 +44,10 @@ function createRefresh(user, clientId, grant_type, deviceId, expiresIn) {
         "t": "r",
         "clid": clientId,
         "am": grant_type,
-        "jti": functions.MakeID().replace(/-/ig, "")
-    }, global.JWT_SECRET, { expiresIn: expiresIn })
+        "jti": functions.MakeID().replace(/-/ig, ""),
+        "creation_date": new Date(),
+        "hours_expire": expiresIn
+    }, global.JWT_SECRET)
 }
 
 module.exports = {
