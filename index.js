@@ -33,8 +33,8 @@ mongoose.connect(config.mongodb.database, () => {
                             let decodedToken = jwt.decode(object.token.split("eg1~")[1]);
 
                             if (DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).getTime() <= new Date().getTime()) {
-                                await jwtTokens.updateOne({ [`${i}.${x}`]: {"0":"remove"} });
-                                await jwtTokens.updateOne({ $pull: { [`${i}`]: {"0":"remove"} } });
+                                await jwtTokens.updateOne({ [`${i}.${x}`]: [] });
+                                await jwtTokens.updateOne({ $pull: { [`${i}`]: [] } });
                             }
                         } catch {}
                     }

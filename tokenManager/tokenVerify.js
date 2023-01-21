@@ -34,8 +34,8 @@ async function verifyToken(req, res, next) {
     } catch (err) {
         if (jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) {
             let index = jwtTokens.accessTokens.findIndex(i => i.token == `eg1~${token}`);
-            await jwtTokens.updateOne({ [`accessTokens.${index}`]: {"0":"remove"} });
-            await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
+            await jwtTokens.updateOne({ [`accessTokens.${index}`]: [] });
+            await jwtTokens.updateOne({ $pull: { "accessTokens": [] } });
         }
         
         return error.createError(
@@ -78,13 +78,13 @@ async function verifyClient(req, res, next) {
     } catch (err) {
         if (jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) {
             let index = jwtTokens.accessTokens.findIndex(i => i.token == `eg1~${token}`);
-            await jwtTokens.updateOne({ [`accessTokens.${index}`]: {"0":"remove"} });
-            await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
+            await jwtTokens.updateOne({ [`accessTokens.${index}`]: [] });
+            await jwtTokens.updateOne({ $pull: { "accessTokens": [] } });
         }
         if (jwtTokens.clientTokens.find(i => i.token == `eg1~${token}`)) {
             let index = jwtTokens.clientTokens.findIndex(i => i.token == `eg1~${token}`);
-            await jwtTokens.updateOne({ [`clientTokens.${index}`]: {"0":"remove"} });
-            await jwtTokens.updateOne({ $pull: { "clientTokens": {"0":"remove"} } });
+            await jwtTokens.updateOne({ [`clientTokens.${index}`]: [] });
+            await jwtTokens.updateOne({ $pull: { "clientTokens": [] } });
         }
         
         return error.createError(

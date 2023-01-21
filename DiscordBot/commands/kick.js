@@ -33,16 +33,16 @@ module.exports = {
 
             if (jwtTokens.accessTokens.find(i => i.accountId == targetUser.accountId)) {
                 let index = jwtTokens.accessTokens.findIndex(i => i.accountId == targetUser.accountId);
-                await jwtTokens.updateOne({ [`accessTokens.${index}`]: {"0":"remove"} });
-                await jwtTokens.updateOne({ $pull: { "accessTokens": {"0":"remove"} } });
+                await jwtTokens.updateOne({ [`accessTokens.${index}`]: [] });
+                await jwtTokens.updateOne({ $pull: { "accessTokens": [] } });
 
                 removed = true;
             }
 
             if (jwtTokens.refreshTokens.find(i => i.accountId == targetUser.accountId)) {
                 let index = jwtTokens.refreshTokens.findIndex(i => i.accountId == targetUser.accountId);
-                await jwtTokens.updateOne({ [`refreshTokens.${index}`]: {"0":"remove"} });
-                await jwtTokens.updateOne({ $pull: { "refreshTokens": {"0":"remove"} } });
+                await jwtTokens.updateOne({ [`refreshTokens.${index}`]: [] });
+                await jwtTokens.updateOne({ $pull: { "refreshTokens": [] } });
             }
 
             if (global.Clients.find(client => client.accountId == targetUser.accountId)) {
