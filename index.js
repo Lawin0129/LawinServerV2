@@ -4,7 +4,8 @@ const mongoose = require("mongoose");
 const fs = require("fs");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
-const config = require("./Config/config.json");
+const path = require("path");
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, "Config", "config.json")).toString());
 
 const tokens = require("./model/tokens.js");
 const log = require("./structs/log.js");

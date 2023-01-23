@@ -5,5 +5,7 @@
     },
     "mongodb": {
         "database": "mongodb://127.0.0.1/lawindb"
-    }
+    },
+    "matchmakerIP": "127.0.0.1:80",
+    "gameServerIP": "127.0.0.1:7777"
 }

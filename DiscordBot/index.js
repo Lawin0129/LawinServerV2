@@ -1,7 +1,8 @@
 const { Client, Intents } = require("discord.js");
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] });
 const fs = require("fs");
-const config = require("../Config/config.json");
+const path = require("path");
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "Config", "config.json")).toString());
 
 const log = require("../structs/log.js");
 

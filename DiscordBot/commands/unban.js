@@ -1,6 +1,8 @@
 const { MessageEmbed } = require("discord.js");
 const User = require("../../model/user.js");
-const config = require("../../Config/config.json");
+const fs = require("fs");
+const path = require("path");
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "Config", "config.json")).toString());
 
 module.exports = {
     commandInfo: {
