@@ -10,7 +10,7 @@
 - Marking items as seen
 - Managing friends (e.g. adding friends)
 ### XMPP Features
-- Parties (builds 3.5 to 14.50) (builds 9.40-10.40 will not work at all)
+- Parties (builds 3.5 to 14.50)
 - Chat (whispering, global chat, party chat)
 - Friends
 ### NOTE: LawinServerV2 does not support Save the World.
