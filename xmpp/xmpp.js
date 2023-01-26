@@ -12,7 +12,8 @@ const User = require("../model/user.js");
 const Friends = require("../model/friends.js");
 
 const port = 80;
-const wss = new WebSocket({ server: app.listen(port, () => log.xmpp(`XMPP started listening on port ${port}`)) });
+const wss = new WebSocket({ server: app.listen(port, () => log.xmpp(`XMPP and Matchmaker started listening on port ${port}`)) });
+const matchmaker = require("../matchmaker/matchmaker.js");
 
 global.Clients = [];
 
@@ -44,6 +45,9 @@ app.get("/clients", (req, res) => {
 })
 
 wss.on('connection', async (ws) => {
+    // Start matchmaker if it's not connecting for xmpp.
+    if (ws.protocol.toLowerCase() != "xmpp") return matchmaker(ws);
+
     var accountId = "";
     var displayName = "";
     var token = "";
