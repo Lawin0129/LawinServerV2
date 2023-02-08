@@ -30,13 +30,14 @@ mongoose.connect(config.mongodb.database, () => {
                 if (Array.isArray(jwtTokens[i])) {
                     for (var x in jwtTokens[i]) {
                         try {
+                            await jwtTokens.updateOne({ $pull: { [`${i}`]: null } });
+                            
                             let object = jwtTokens[i][x];
                             let decodedToken = jwt.decode(object.token.split("eg1~")[1]);
 
                             if (DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).getTime() <= new Date().getTime()) {
                                 await jwtTokens.updateOne({ [`${i}.${x}`]: [] });
                                 await jwtTokens.updateOne({ $pull: { [`${i}`]: [] } });
-                                await jwtTokens.updateOne({ $pull: { [`${i}`]: null } });
                             }
                         } catch {}
                     }
