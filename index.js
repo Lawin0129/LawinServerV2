@@ -36,6 +36,7 @@ mongoose.connect(config.mongodb.database, () => {
                             if (DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).getTime() <= new Date().getTime()) {
                                 await jwtTokens.updateOne({ [`${i}.${x}`]: [] });
                                 await jwtTokens.updateOne({ $pull: { [`${i}`]: [] } });
+                                await jwtTokens.updateOne({ $pull: { [`${i}`]: null } });
                             }
                         } catch {}
                     }
