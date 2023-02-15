@@ -14,6 +14,14 @@ async function verifyToken(req, res, next) {
     const token = req.headers["authorization"].split("bearer eg1~")[1];
     var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
 
+    for (var i in jwtTokens) {
+        if (Array.isArray(jwtTokens[i])) {
+            try {
+                await jwtTokens.updateOne({ $pull: { [`${i}`]: null } });
+            } catch {}
+        }
+    }
+
     try {
         const decodedToken = jwt.decode(token);
 
@@ -55,6 +63,14 @@ async function verifyClient(req, res, next) {
 
     const token = req.headers["authorization"].split("bearer eg1~")[1];
     var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
+
+    for (var i in jwtTokens) {
+        if (Array.isArray(jwtTokens[i])) {
+            try {
+                await jwtTokens.updateOne({ $pull: { [`${i}`]: null } });
+            } catch {}
+        }
+    }
 
     try {
         const decodedToken = jwt.decode(token);

@@ -38,12 +38,14 @@ app.post("/account/api/oauth/token", async (req, res) => {
 
             const token = tokenCreation.createClient(clientId, req.body.grant_type, 4) // expires in 4 hours
 
+            const decodedClient = jwt.decode(token);
+
             await jwtTokens.updateOne({ $push: { clientTokens: { token: `eg1~${token}`, ip: ip } } })
 
             res.json({
                 access_token: `eg1~${token}`,
-                expires_in: 14400,
-                expires_at: GetDateAddHours(4),
+                expires_in: Math.round(((DateAddHours(new Date(decodedClient.creation_date), decodedClient.hours_expire).getTime()) - (new Date().getTime())) / 1000),
+                expires_at: DateAddHours(new Date(decodedClient.creation_date), decodedClient.hours_expire).toISOString(),
                 token_type: "bearer",
                 client_id: clientId,
                 internal_client: true,
@@ -148,6 +150,12 @@ app.post("/account/api/oauth/token", async (req, res) => {
 
     var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
 
+    if (jwtTokens.accessTokens.find(i => i.accountId == req.user.accountId)) {
+        let index = jwtTokens.accessTokens.findIndex(i => i.accountId == req.user.accountId);
+        await jwtTokens.updateOne({ [`accessTokens.${index}`]: [] });
+        await jwtTokens.updateOne({ $pull: { "accessTokens": [] } });
+    }
+
     if (jwtTokens.refreshTokens.find(i => i.accountId == req.user.accountId)) {
         let index = jwtTokens.refreshTokens.findIndex(i => i.accountId == req.user.accountId);
         await jwtTokens.updateOne({ [`refreshTokens.${index}`]: [] });
@@ -158,17 +166,20 @@ app.post("/account/api/oauth/token", async (req, res) => {
     const accessToken = tokenCreation.createAccess(req.user, clientId, req.body.grant_type, deviceId, 8); // expires in 8 hours
     const refreshToken = tokenCreation.createRefresh(req.user, clientId, req.body.grant_type, deviceId, 24); // expires in 24 hours
 
+    const decodedAccess = jwt.decode(accessToken);
+    const decodedRefresh = jwt.decode(refreshToken);
+
     await jwtTokens.updateOne({ $push: { accessTokens: { accountId: req.user.accountId, token: `eg1~${accessToken}` } } });
     await jwtTokens.updateOne({ $push: { refreshTokens: { accountId: req.user.accountId, token: `eg1~${refreshToken}` } } });
 
     res.json({
         access_token: `eg1~${accessToken}`,
-        expires_in: 28800,
-        expires_at: GetDateAddHours(8),
+        expires_in: Math.round(((DateAddHours(new Date(decodedAccess.creation_date), decodedAccess.hours_expire).getTime()) - (new Date().getTime())) / 1000),
+        expires_at: DateAddHours(new Date(decodedAccess.creation_date), decodedAccess.hours_expire).toISOString(),
         token_type: "bearer",
         refresh_token: `eg1~${refreshToken}`,
-        refresh_expires: 86400,
-        refresh_expires_at: GetDateAddHours(24),
+        refresh_expires: Math.round(((DateAddHours(new Date(decodedRefresh.creation_date), decodedRefresh.hours_expire).getTime()) - (new Date().getTime())) / 1000),
+        refresh_expires_at: DateAddHours(new Date(decodedRefresh.creation_date), decodedRefresh.hours_expire).toISOString(),
         account_id: req.user.accountId,
         client_id: clientId,
         internal_client: true,
@@ -192,7 +203,7 @@ app.get("/account/api/oauth/verify", verifyToken, async (req, res) => {
         internal_client: true,
         client_service: "fortnite",
         account_id: req.user.accountId,
-        expires_in: ((DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).getTime()) - (new Date().getTime())) / 1000,
+        expires_in: Math.round(((DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).getTime()) - (new Date().getTime())) / 1000),
         expires_at: DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).toISOString(),
         auth_method: decodedToken.am,
         display_name: req.user.username,
