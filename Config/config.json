@@ -6,6 +6,10 @@
     "mongodb": {
         "database": "mongodb://127.0.0.1/lawindb"
     },
+    "clientsettings": {
+        "WARNING": "This can be exploited, make sure you trust the people (if anyone) who are going to be using this backend.",
+        "SaveFortniteSettings": false
+    },
     "matchmakerIP": "127.0.0.1:80",
     "gameServerIP": "127.0.0.1:7777"
 }

@@ -16,42 +16,35 @@ async function sleep(ms) {
 }
 
 function GetVersionInfo(req) {
-    var memory = {
+    let memory = {
         season: 0,
         build: 0.0,
-        CL: "",
+        CL: "0",
         lobby: ""
     }
 
     if (req.headers["user-agent"]) {
-        var CL = "";
+        let CL = "";
 
         try {
-            var BuildID = req.headers["user-agent"].split("-")[3].split(",")[0]
-            if (!Number.isNaN(Number(BuildID))) {
-                CL = BuildID;
+            let BuildID = req.headers["user-agent"].split("-")[3].split(",")[0];
+            if (!Number.isNaN(Number(BuildID))) CL = BuildID;
+            else {
+                let BuildID = req.headers["user-agent"].split("-")[3].split(" ")[0];
+                if (!Number.isNaN(Number(BuildID))) CL = BuildID;
             }
-
-            if (Number.isNaN(Number(BuildID))) {
-                var BuildID = req.headers["user-agent"].split("-")[3].split(" ")[0]
-                if (!Number.isNaN(Number(BuildID))) {
-                    CL = BuildID;
-                }
-            }
-        } catch (err) {
+        } catch {
             try {
-                var BuildID = req.headers["user-agent"].split("-")[1].split("+")[0]
-                if (!Number.isNaN(Number(BuildID))) {
-                    CL = BuildID;
-                }
-            } catch (err) {}
+                let BuildID = req.headers["user-agent"].split("-")[1].split("+")[0];
+                if (!Number.isNaN(Number(BuildID))) CL = BuildID;
+            } catch {}
         }
 
         try {
-            var Build = req.headers["user-agent"].split("Release-")[1].split("-")[0];
+            let Build = req.headers["user-agent"].split("Release-")[1].split("-")[0];
 
             if (Build.split(".").length == 3) {
-                Value = Build.split(".");
+                let Value = Build.split(".");
                 Build = Value[0] + "." + Value[1] + Value[2];
             }
 
@@ -60,10 +53,8 @@ function GetVersionInfo(req) {
             memory.CL = CL;
             memory.lobby = `LobbySeason${memory.season}`;
 
-            if (Number.isNaN(memory.season)) {
-                throw new Error();
-            }
-        } catch (err) {
+            if (Number.isNaN(memory.season)) throw new Error();
+        } catch {
             memory.season = 2;
             memory.build = 2.0;
             memory.CL = CL;

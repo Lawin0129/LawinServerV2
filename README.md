@@ -3,6 +3,7 @@
 
 ## Features
 ### LawinServer V2
+- CloudStorage and ClientSettings (Settings Saving)
 - Changing items in locker
 - Changing banner icon and banner color
 - Changing item edit styles
@@ -34,12 +35,12 @@
 4) You can set multiple moderators like this `["discordId","discordId2"]`
 
 ## Hosting for others
-You are allowed to host for others, however please don't modify `responses/contentpages.json`
+You are allowed to host for others, however please don't remove my credits from `responses/contentpages.json`
 
 ## How to host LawinServerV2
 1) Install [NodeJS](https://nodejs.org/en/) and [MongoDB](https://www.mongodb.com/try/download/community).
 2) Download and Extract LawinServerV2 to a safe location.
-3) Run "install_packages.bat" to install all the modules.
+3) Run "install_packages.bat" to install all the required modules.
 4) Go to Config/config.json in the directory you extracted LawinServerV2 into.
 5) Open it, set your discord bot token (DO NOT SHARE THIS TOKEN) and save it. The discord bot will be used for creating accounts and managing your account.
 6) Run "start.bat", if there is no errors, it should work.

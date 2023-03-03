@@ -12,6 +12,8 @@ const log = require("./structs/log.js");
 const error = require("./structs/error.js");
 const functions = require("./structs/functions.js");
 
+if (!fs.existsSync("./ClientSettings")) fs.mkdirSync("./ClientSettings");
+
 global.JWT_SECRET = "LAWIN_BACKEND";
 const PORT = 8080;
 
