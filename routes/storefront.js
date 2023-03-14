@@ -15,7 +15,7 @@ app.get("/fortnite/api/storefront/v2/keychain", verifyToken, async (req, res) =>
     res.json(keychain);
 });
 
-app.get("/catalog/api/shared/bulk/offers", verifyToken, async (req, res) => {
+app.get("/catalog/api/shared/bulk/offers", async (req, res) => {
     res.json({});
 });
 
