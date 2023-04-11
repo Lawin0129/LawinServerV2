@@ -9,33 +9,19 @@ const functions = require("../structs/functions.js");
 const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 
 app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return error.createError(
+    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined, 403, res
-    );
-
-    if (req.query.profileId != "athena") return error.createError(
-        "errors.com.epicgames.modules.profiles.invalid_command",
-        `SetItemFavoriteStatusBatch is not valid on ${req.query.profileId} profile`, 
-        ["SetItemFavoriteStatusBatch",req.query.profileId], 12801, undefined, 400, res
+        [req.query.profileId], 12813, undefined)
     );
 
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
-    if (profile.profileId == "athena") {
+    if (req.query.profileId == "athena") {
         const memory = functions.GetVersionInfo(req);
 
         profile.stats.attributes.season_num = memory.season;
-
-        if (memory.season == 2) {
-            profile.stats.attributes.book_level = 70;
-            profile.stats.attributes.season_match_boost = 110;
-        } else {
-            profile.stats.attributes.book_level = 100;
-            profile.stats.attributes.season_match_boost = 120;
-        }
     }
 
     let ApplyProfileChanges = [];
@@ -43,46 +29,40 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    var missingFields = [];
+    let missingFields = [];
     if (!req.body.itemIds) missingFields.push("itemIds");
 
-    if (missingFields.length > 0) {
-        return error.createError(
-            "errors.com.epicgames.validation.validation_failed",
-            `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
-            [`[${missingFields.join(", ")}]`], 1040, undefined, 400, res
-        );
+    if (missingFields.length > 0) return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.join(", ")}]`], 1040, undefined)
+    );
+
+    if (!Array.isArray(req.body.itemIds)) return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. 'itemIds' is not an array.`,
+        ["itemIds"], 1040, undefined)
+    );
+    
+    for (let i in req.body.itemIds) {
+        if (!profile.items[req.body.itemIds[i]]) continue;
+        
+        profile.items[req.body.itemIds[i]].attributes.item_seen = true;
+        
+        ApplyProfileChanges.push({
+            "changeType": "itemAttrChanged",
+            "itemId": req.body.itemIds[i],
+            "attributeName": "item_seen",
+            "attributeValue": true
+        });
+
+        StatChanged = true;
     }
 
-    if (Array.isArray(req.body.itemIds)) {
-        for (var i in req.body.itemIds) {
-            if (!profile.items[req.body.itemIds[i]]) {
-                return error.createError(
-                    "errors.com.epicgames.fortnite.id_invalid",
-                    `Item (id: "${req.body.itemIds[i]}") not found`,
-                    [req.body.itemIds[i]], 16027, undefined, 400, res
-                );
-            }
-
-            profile.items[req.body.itemIds[i]].attributes.item_seen = true;
-
-            ApplyProfileChanges.push({
-                "changeType": "itemAttrChanged",
-                "itemId": req.body.itemIds[i],
-                "attributeName": "item_seen",
-                "attributeValue": profile.items[req.body.itemIds[i]].attributes.item_seen
-            })
-
-            StatChanged = true;
-        }
-    }
-
-    if (StatChanged == true) {
+    if (StatChanged) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
-        
-        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -101,36 +81,30 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
+
+    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return error.createError(
+    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined, 403, res
+        [req.query.profileId], 12813, undefined)
     );
 
-    if (req.query.profileId != "athena") return error.createError(
+    if (req.query.profileId != "athena") return res.status(400).json(error.createError(
         "errors.com.epicgames.modules.profiles.invalid_command",
         `SetItemFavoriteStatusBatch is not valid on ${req.query.profileId} profile`, 
-        ["SetItemFavoriteStatusBatch",req.query.profileId], 12801, undefined, 400, res
+        ["SetItemFavoriteStatusBatch",req.query.profileId], 12801, undefined)
     );
 
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
-    if (profile.profileId == "athena") {
+    if (req.query.profileId == "athena") {
         const memory = functions.GetVersionInfo(req);
 
         profile.stats.attributes.season_num = memory.season;
-
-        if (memory.season == 2) {
-            profile.stats.attributes.book_level = 70;
-            profile.stats.attributes.season_match_boost = 110;
-        } else {
-            profile.stats.attributes.book_level = 100;
-            profile.stats.attributes.season_match_boost = 120;
-        }
     }
 
     let ApplyProfileChanges = [];
@@ -138,49 +112,48 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    var missingFields = [];
+    let missingFields = [];
     if (!req.body.itemIds) missingFields.push("itemIds");
     if (!req.body.itemFavStatus) missingFields.push("itemFavStatus");
 
-    if (missingFields.length > 0) {
-        return error.createError(
-            "errors.com.epicgames.validation.validation_failed",
-            `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
-            [`[${missingFields.join(", ")}]`], 1040, undefined, 400, res
-        );
+    if (missingFields.length > 0) return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.join(", ")}]`], 1040, undefined)
+    );
+
+    if (!Array.isArray(req.body.itemIds)) return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. 'itemIds' is not an array.`,
+        ["itemIds"], 1040, undefined)
+    );
+
+    if (!Array.isArray(req.body.itemFavStatus)) return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. 'itemFavStatus' is not an array.`,
+        ["itemFavStatus"], 1040, undefined)
+    );
+
+    for (let i in req.body.itemIds) {
+        if (!profile.items[req.body.itemIds[i]]) continue;
+        if (typeof req.body.itemFavStatus[i] != "boolean") continue;
+
+        profile.items[req.body.itemIds[i]].attributes.favorite = req.body.itemFavStatus[i];
+
+        ApplyProfileChanges.push({
+            "changeType": "itemAttrChanged",
+            "itemId": req.body.itemIds[i],
+            "attributeName": "favorite",
+            "attributeValue": profile.items[req.body.itemIds[i]].attributes.favorite
+        })
+
+        StatChanged = true;
     }
 
-    if (Array.isArray(req.body.itemIds) && Array.isArray(req.body.itemFavStatus)) {
-        for (var i in req.body.itemIds) {
-            if (!profile.items[req.body.itemIds[i]]) {
-                return error.createError(
-                    "errors.com.epicgames.fortnite.id_invalid",
-                    `Item (id: "${req.body.itemIds[i]}") not found`,
-                    [req.body.itemIds[i]], 16027, undefined, 400, res
-                );
-            }
-
-            if (typeof req.body.itemFavStatus[i] == "boolean") {
-                profile.items[req.body.itemIds[i]].attributes.favorite = req.body.itemFavStatus[i];
-
-                ApplyProfileChanges.push({
-                    "changeType": "itemAttrChanged",
-                    "itemId": req.body.itemIds[i],
-                    "attributeName": "favorite",
-                    "attributeValue": profile.items[req.body.itemIds[i]].attributes.favorite
-                })
-
-                StatChanged = true;
-            }
-        }
-    }
-
-    if (StatChanged == true) {
+    if (StatChanged) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
-        
-        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -199,106 +172,103 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
+
+    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return error.createError(
+    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined, 403, res
+        [req.query.profileId], 12813, undefined)
     );
 
-    if (req.query.profileId != "athena") return error.createError(
+    if (req.query.profileId != "athena") return res.status(400).json(error.createError(
         "errors.com.epicgames.modules.profiles.invalid_command",
         `SetBattleRoyaleBanner is not valid on ${req.query.profileId} profile`, 
-        ["SetBattleRoyaleBanner",req.query.profileId], 12801, undefined, 400, res
+        ["SetBattleRoyaleBanner",req.query.profileId], 12801, undefined)
     );
 
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
-    if (profile.profileId == "athena") {
-        const memory = functions.GetVersionInfo(req);
+    const memory = functions.GetVersionInfo(req);
 
-        profile.stats.attributes.season_num = memory.season;
-
-        if (memory.season == 2) {
-            profile.stats.attributes.book_level = 70;
-            profile.stats.attributes.season_match_boost = 110;
-        } else {
-            profile.stats.attributes.book_level = 100;
-            profile.stats.attributes.season_match_boost = 120;
-        }
-    }
+    if (req.query.profileId == "athena") profile.stats.attributes.season_num = memory.season;
 
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    var missingFields = [];
+    let missingFields = [];
     if (!req.body.homebaseBannerIconId) missingFields.push("homebaseBannerIconId");
     if (!req.body.homebaseBannerColorId) missingFields.push("homebaseBannerColorId");
 
-    if (missingFields.length > 0) {
-        return error.createError(
-            "errors.com.epicgames.validation.validation_failed",
-            `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`, 
-            [`[${missingFields.join(", ")}]`], 1040, undefined, 400, res
-        );
+    if (missingFields.length > 0) return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.join(", ")}]`], 1040, undefined)
+    );
+
+    if (typeof req.body.homebaseBannerIconId != "string") return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. 'homebaseBannerIconId' is not a string.`,
+        ["homebaseBannerIconId"], 1040, undefined)
+    );
+
+    if (typeof req.body.homebaseBannerColorId != "string") return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. 'homebaseBannerColorId' is not a string.`,
+        ["homebaseBannerColorId"], 1040, undefined)
+    );
+
+    let returnError = true;
+    let bannerProfileId = memory.build < 3.5 ? "profile0" : "common_core";
+
+    for (let itemId in profiles.profiles[bannerProfileId].items) {
+        if (profiles.profiles[bannerProfileId].items[itemId].templateId.startsWith(`HomebaseBannerIcon:${req.body.homebaseBannerIconId}`)) returnError = false;
     }
 
-    var returnError = true;
-
-    for (var itemId in profiles.profiles["common_core"].items) {
-        if (profiles.profiles["common_core"].items[itemId].templateId.startsWith(`HomebaseBannerIcon:${req.body.homebaseBannerIconId}`)) returnError = false;
-    }
-
-    if (returnError == true) return error.createError(
+    if (returnError) return res.status(400).json(error.createError(
         "errors.com.epicgames.fortnite.item_not_found",
         `Banner template 'HomebaseBannerIcon:${req.body.homebaseBannerIconId}' not found in profile`, 
-        [`HomebaseBannerIcon:${req.body.homebaseBannerIconId}`], 16006, undefined, 400, res
+        [`HomebaseBannerIcon:${req.body.homebaseBannerIconId}`], 16006, undefined)
     );
 
     returnError = true;
     
-    for (var itemId in profiles.profiles["common_core"].items) {
-        if (profiles.profiles["common_core"].items[itemId].templateId.startsWith(`HomebaseBannerColor:${req.body.homebaseBannerColorId}`)) returnError = false;
+    for (let itemId in profiles.profiles[bannerProfileId].items) {
+        if (profiles.profiles[bannerProfileId].items[itemId].templateId.startsWith(`HomebaseBannerColor:${req.body.homebaseBannerColorId}`)) returnError = false;
     }
 
-    if (returnError == true) return error.createError(
+    if (returnError) return res.status(400).json(error.createError(
         "errors.com.epicgames.fortnite.item_not_found",
         `Banner template 'HomebaseBannerColor:${req.body.homebaseBannerColorId}' not found in profile`, 
-        [`HomebaseBannerColor:${req.body.homebaseBannerColorId}`], 16006, undefined, 400, res
+        [`HomebaseBannerColor:${req.body.homebaseBannerColorId}`], 16006, undefined)
     );
+
+    profile.stats.attributes.banner_icon = req.body.homebaseBannerIconId;
+    profile.stats.attributes.banner_color = req.body.homebaseBannerColorId;
+
+    ApplyProfileChanges.push({
+        "changeType": "statModified",
+        "name": "banner_icon",
+        "value": profile.stats.attributes.banner_icon
+    });
     
-    if (req.body.homebaseBannerIconId && req.body.homebaseBannerColorId) {
-        if (typeof req.body.homebaseBannerIconId == "string" && typeof req.body.homebaseBannerColorId == "string") {
-            profile.stats.attributes.banner_icon = req.body.homebaseBannerIconId;
-            profile.stats.attributes.banner_color = req.body.homebaseBannerColorId;
+    ApplyProfileChanges.push({
+        "changeType": "statModified",
+        "name": "banner_color",
+        "value": profile.stats.attributes.banner_color
+    });
 
-            ApplyProfileChanges.push({
-                "changeType": "statModified",
-                "name": "banner_icon",
-                "value": profile.stats.attributes.banner_icon
-            })
-    
-            ApplyProfileChanges.push({
-                "changeType": "statModified",
-                "name": "banner_color",
-                "value": profile.stats.attributes.banner_color
-            })
+    StatChanged = true;
 
-            StatChanged = true;
-        }
-    }
-
-    if (StatChanged == true) {
+    if (StatChanged) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
-        
-        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -317,36 +287,30 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
+
+    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return error.createError(
+    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined, 403, res
+        [req.query.profileId], 12813, undefined)
     );
 
-    if (req.query.profileId != "athena") return error.createError(
+    if (req.query.profileId != "athena") return res.status(400).json(error.createError(
         "errors.com.epicgames.modules.profiles.invalid_command",
         `EquipBattleRoyaleCustomization is not valid on ${req.query.profileId} profile`, 
-        ["EquipBattleRoyaleCustomization",req.query.profileId], 12801, undefined, 400, res
+        ["EquipBattleRoyaleCustomization",req.query.profileId], 12801, undefined)
     );
 
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
-    if (profile.profileId == "athena") {
+    if (req.query.profileId == "athena") {
         const memory = functions.GetVersionInfo(req);
 
         profile.stats.attributes.season_num = memory.season;
-
-        if (memory.season == 2) {
-            profile.stats.attributes.book_level = 70;
-            profile.stats.attributes.season_match_boost = 110;
-        } else {
-            profile.stats.attributes.book_level = 100;
-            profile.stats.attributes.season_match_boost = 120;
-        }
     }
 
     let ApplyProfileChanges = [];
@@ -364,49 +328,59 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
         "athenaloadingscreen:lsid_random"
     ];
 
-    var missingFields = [];
+    let missingFields = [];
     if (!req.body.slotName) missingFields.push("slotName");
 
-    if (missingFields.length > 0) {
-        return error.createError(
-            "errors.com.epicgames.validation.validation_failed",
-            `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`, 
-            [`[${missingFields.join(", ")}]`], 1040, undefined, 400, res
-        );
-    }
+    if (missingFields.length > 0) return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.join(", ")}]`], 1040, undefined)
+    );
+
+    if (typeof req.body.itemToSlot != "string") return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. 'itemToSlot' is not a string.`,
+        ["itemToSlot"], 1040, undefined)
+    );
+
+    if (typeof req.body.slotName != "string") return res.status(400).json(error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. 'slotName' is not a string.`,
+        ["slotName"], 1040, undefined)
+    );
 
     if (!profile.items[req.body.itemToSlot] && req.body.itemToSlot) {
-        let item = req.body.itemToSlot
-        if (typeof item == "string") item = item.toLowerCase()
+        let item = req.body.itemToSlot.toLowerCase();
 
         if (!specialCosmetics.includes(item)) {
-            return error.createError(
+            return res.status(400).json(error.createError(
                 "errors.com.epicgames.fortnite.id_invalid",
                 `Item (id: "${req.body.itemToSlot}") not found`, 
-                [req.body.itemToSlot], 16027, undefined, 400, res
+                [req.body.itemToSlot], 16027, undefined)
             );
         }
     }
 
     if (profile.items[req.body.itemToSlot]) {
-        if (!profile.items[req.body.itemToSlot].templateId.startsWith(`Athena${req.body.slotName}:`)) return error.createError(
+        if (!profile.items[req.body.itemToSlot].templateId.startsWith(`Athena${req.body.slotName}:`)) return res.status(400).json(error.createError(
             "errors.com.epicgames.fortnite.id_invalid",
             `Cannot slot item of type ${profile.items[req.body.itemToSlot].templateId.split(":")[0]} in slot of category ${req.body.slotName}`, 
-            [profile.items[req.body.itemToSlot].templateId.split(":")[0],req.body.slotName], 16027, undefined, 400, res
+            [profile.items[req.body.itemToSlot].templateId.split(":")[0],req.body.slotName], 16027, undefined)
         );
 
         let Variants = req.body.variantUpdates;
-        let item = req.body.itemToSlot
-        if (typeof item == "string") item = item.toLowerCase()
+        let item = req.body.itemToSlot.toLowerCase();
 
         if (Variants && !specialCosmetics.includes(item)) {
-            for (var i in Variants) {
-                if (!Variants[i].channel) break;
-                if (!Variants[i].active) break;
-                if (!profile.items[req.body.itemToSlot].attributes.variants.find(x => x.channel == Variants[i].channel)) break;
-                if (!profile.items[req.body.itemToSlot].attributes.variants.find(x => x.channel == Variants[i].channel).owned.includes(Variants[i].active)) break;
+            for (let i in Variants) {
+                if (!Variants[i].channel) continue;
+                if (!Variants[i].active) continue;
 
                 let index = profile.items[req.body.itemToSlot].attributes.variants.findIndex(x => x.channel == Variants[i].channel);
+
+                if (index == -1) continue;
+                if (!profile.items[req.body.itemToSlot].attributes.variants[index].owned.includes(Variants[i].active)) continue;
+
                 profile.items[req.body.itemToSlot].attributes.variants[index].active = Variants[i].active;
             }
 
@@ -452,15 +426,15 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
 
         default:
             if (!slotNames.includes(req.body.slotName)) break;
-            let Category = (`favorite_${req.body.slotName}`).toLowerCase()
+            let Category = (`favorite_${req.body.slotName}`).toLowerCase();
 
             profile.stats.attributes[Category] = req.body.itemToSlot || "";
             StatChanged = true;
         break;
     }
 
-    if (StatChanged == true) {
-        let Category = (`favorite_${req.body.slotName}`).toLowerCase()
+    if (StatChanged) {
+        let Category = (`favorite_${req.body.slotName}`).toLowerCase();
         if (Category == "favorite_itemwrap") Category += "s";
 
         profile.rvn += 1;
@@ -471,9 +445,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
             "changeType": "statModified",
             "name": Category,
             "value": profile.stats.attributes[Category]
-        })
-        
-        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
+        });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -492,30 +464,24 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
+
+    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return error.createError(
+    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined, 403, res
+        [req.query.profileId], 12813, undefined)
     );
 
     const profiles = await Profile.findOne({ accountId: req.user.accountId }).lean();
     let profile = profiles.profiles[req.query.profileId];
 
-    if (profile.profileId == "athena") {
+    if (req.query.profileId == "athena") {
         const memory = functions.GetVersionInfo(req);
 
         profile.stats.attributes.season_num = memory.season;
-
-        if (memory.season == 2) {
-            profile.stats.attributes.book_level = 70;
-            profile.stats.attributes.season_match_boost = 110;
-        } else {
-            profile.stats.attributes.book_level = 100;
-            profile.stats.attributes.season_match_boost = 120;
-        }
     }
 
     let ApplyProfileChanges = [];
@@ -533,10 +499,10 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
         case "PurchaseCatalogEntry": break;
 
         default:
-            error.createError(
+            res.status(404).json(error.createError(
                 "errors.com.epicgames.fortnite.operation_not_found",
                 `Operation ${req.params.operation} not valid`, 
-                [req.params.operation], 16035, undefined, 404, res
+                [req.params.operation], 16035, undefined)
             );
         return;
     }

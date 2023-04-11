@@ -1,9 +1,6 @@
-const { MessageEmbed } = require("discord.js");
 const User = require("../../model/user.js");
-const tokens = require("../../model/tokens.js");
 const fs = require("fs");
-const path = require("path");
-const config = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "Config", "config.json")).toString());
+const config = JSON.parse(fs.readFileSync("./Config/config.json").toString());
 
 module.exports = {
     commandInfo: {
@@ -19,49 +16,27 @@ module.exports = {
         ]
     },
     execute: async (interaction) => {
-        let msg = "";
+        await interaction.deferReply({ ephemeral: true });
         
-        if (!config.moderators.includes(interaction.user.id)) return interaction.reply({ content: "You do not have moderator permissions.", ephemeral: true });
+        if (!config.moderators.includes(interaction.user.id)) return interaction.editReply({ content: "You do not have moderator permissions.", ephemeral: true });
     
         const { options } = interaction;
         const targetUser = await User.findOne({ username_lower: (options.get("username").value).toLowerCase() });
     
-        if (!targetUser) msg = "The account username you entered does not exist.";
-        else if (targetUser.banned == true) msg = "This account is already banned.";
-    
-        if (targetUser && targetUser.banned != true) {
-            await targetUser.updateOne({ $set: { banned: true } });
+        if (!targetUser) return interaction.editReply({ content: "The account username you entered does not exist.", ephemeral: true });
+        else if (targetUser.banned) return interaction.editReply({ content: "This account is already banned.", ephemeral: true });
 
-            var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true } });
+        await targetUser.updateOne({ $set: { banned: true } });
 
-            if (jwtTokens.accessTokens.find(i => i.accountId == targetUser.accountId)) {
-                let index = jwtTokens.accessTokens.findIndex(i => i.accountId == targetUser.accountId);
-                await jwtTokens.updateOne({ [`accessTokens.${index}`]: [] });
-                await jwtTokens.updateOne({ $pull: { "accessTokens": [] } });
-            }
+        let accessToken = global.accessTokens.findIndex(i => i.accountId == targetUser.accountId);
+        if (accessToken != -1) global.accessTokens.splice(accessToken, 1);
 
-            if (jwtTokens.refreshTokens.find(i => i.accountId == targetUser.accountId)) {
-                let index = jwtTokens.refreshTokens.findIndex(i => i.accountId == targetUser.accountId);
-                await jwtTokens.updateOne({ [`refreshTokens.${index}`]: [] });
-                await jwtTokens.updateOne({ $pull: { "refreshTokens": [] } });
-            }
+        let refreshToken = global.refreshTokens.findIndex(i => i.accountId == targetUser.accountId);
+        if (refreshToken != -1) global.refreshTokens.splice(refreshToken, 1);
 
-            if (global.Clients.find(client => client.accountId == targetUser.accountId)) {
-                var ClientData = global.Clients.find(client => client.accountId == targetUser.accountId);
+        let xmppClient = global.Clients.find(client => client.accountId == targetUser.accountId);
+        if (xmppClient) xmppClient.client.close();
 
-                ClientData.client.close();
-            }
-
-            msg = `Successfully banned ${targetUser.username}`;
-        }
-    
-        let embed = new MessageEmbed()
-        .setAuthor({ name: "Moderation", iconURL: "https://cdn.discordapp.com/attachments/927739901540188200/1020458073019666492/unknown.png" })
-        .setFields(
-            { name: "Message", value: msg },
-        )
-        .setTimestamp()
-
-        interaction.reply({ embeds: [embed], ephemeral: true });
+        interaction.editReply({ content: `Successfully banned ${targetUser.username}`, ephemeral: true });
     }
 }

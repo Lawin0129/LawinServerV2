@@ -1,10 +1,5 @@
-function createError(errorCode, errorMessage, messageVars, numericErrorCode, error, statusCode, res) {
-    res.set({
-        'X-Epic-Error-Name': errorCode,
-        'X-Epic-Error-Code': numericErrorCode
-    });
-
-    res.status(statusCode).json({
+function createError(errorCode, errorMessage, messageVars, numericErrorCode, error) {
+    return {
         errorCode: errorCode,
         errorMessage: errorMessage,
         messageVars: messageVars,
@@ -13,7 +8,7 @@ function createError(errorCode, errorMessage, messageVars, numericErrorCode, err
         intent: "prod",
         error_description: errorMessage,
         error: error
-    });
+    };
 }
 
 module.exports = {

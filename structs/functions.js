@@ -28,14 +28,17 @@ function GetVersionInfo(req) {
 
         try {
             let BuildID = req.headers["user-agent"].split("-")[3].split(",")[0];
+
             if (!Number.isNaN(Number(BuildID))) CL = BuildID;
             else {
-                let BuildID = req.headers["user-agent"].split("-")[3].split(" ")[0];
+                BuildID = req.headers["user-agent"].split("-")[3].split(" ")[0];
+
                 if (!Number.isNaN(Number(BuildID))) CL = BuildID;
             }
         } catch {
             try {
                 let BuildID = req.headers["user-agent"].split("-")[1].split("+")[0];
+
                 if (!Number.isNaN(Number(BuildID))) CL = BuildID;
             } catch {}
         }
@@ -55,10 +58,22 @@ function GetVersionInfo(req) {
 
             if (Number.isNaN(memory.season)) throw new Error();
         } catch {
-            memory.season = 2;
-            memory.build = 2.0;
-            memory.CL = CL;
-            memory.lobby = "LobbyWinterDecor";
+            if (Number(memory.CL) < 3724489) {
+                memory.season = 0;
+                memory.build = 0.0;
+                memory.CL = CL;
+                memory.lobby = "LobbySeason0";
+            } else if (Number(memory.CL) <= 3790078) {
+                memory.season = 1;
+                memory.build = 1.0;
+                memory.CL = CL;
+                memory.lobby = "LobbySeason1";
+            } else {
+                memory.season = 2;
+                memory.build = 2.0;
+                memory.CL = CL;
+                memory.lobby = "LobbyWinterDecor";
+            }
         }
     }
 
@@ -70,7 +85,7 @@ function getContentPages(req) {
 
     const contentpages = JSON.parse(JSON.stringify(require("../responses/contentpages.json")));
 
-    var Language = "en";
+    let Language = "en";
 
     try {
         if (req.headers["accept-language"]) {
@@ -83,7 +98,7 @@ function getContentPages(req) {
     } catch {}
 
     const modes = ["saveTheWorldUnowned", "battleRoyale", "creative", "saveTheWorld"];
-    const news = ["savetheworldnews", "battleroyalenews"]
+    const news = ["savetheworldnews", "battleroyalenews"];
 
     try {
         modes.forEach(mode => {
@@ -234,52 +249,38 @@ function sendXmppMessageToAll(body) {
     });
 }
 
-function sendXmppMessageToClient(ws, msg, body) {
-    if (!global.Clients) return;
-    if (typeof body == "object") body = JSON.stringify(body);
-
-    var sender = global.Clients.find(i => i.client == ws);
-    var receiver = global.Clients.find(i => i.jid.split("/")[0] == msg.root.attributes.to || i.jid == msg.root.attributes.to);
-    if (!receiver || !sender) return;
-
-    receiver.client.send(XMLBuilder.create("message")
-    .attribute("from", sender.jid)
-    .attribute("id", msg.root.attributes.id)
-    .attribute("to", receiver.jid)
-    .attribute("xmlns", "jabber:client")
-    .element("body", body).up().toString());
-}
-
 function sendXmppMessageToId(body, toAccountId) {
     if (!global.Clients) return;
     if (typeof body == "object") body = JSON.stringify(body);
 
-    var receiver = global.Clients.find(i => i.accountId == toAccountId);
+    let receiver = global.Clients.find(i => i.accountId == toAccountId);
     if (!receiver) return;
 
     receiver.client.send(XMLBuilder.create("message")
     .attribute("from", "xmpp-admin@prod.ol.epicgames.com")
     .attribute("to", receiver.jid)
     .attribute("xmlns", "jabber:client")
-    .element("body", body).up().toString());
+    .element("body", `${body}`).up().toString());
 }
 
-function getPresenceFromUser(fromId, toId, unavailable) {
+function getPresenceFromUser(fromId, toId, offline) {
     if (!global.Clients) return;
-    var SenderData = global.Clients.find(i => i.accountId == fromId);
-    var ClientData = global.Clients.find(i => i.accountId == toId);
-    var availability = unavailable == true ? "unavailable" : "available";
+
+    let SenderData = global.Clients.find(i => i.accountId == fromId);
+    let ClientData = global.Clients.find(i => i.accountId == toId);
+
     if (!SenderData || !ClientData) return;
 
-    var xml = XMLBuilder.create("presence")
+    let xml = XMLBuilder.create("presence")
     .attribute("to", ClientData.jid)
     .attribute("xmlns", "jabber:client")
     .attribute("from", SenderData.jid)
+    .attribute("type", offline ? "unavailable" : "available")
 
-    if (SenderData.lastPresenceUpdate.away == true) xml = xml.attribute("type", availability).element("show", "away").up().element("status", SenderData.lastPresenceUpdate.status).up();
-    else xml = xml.attribute("type", availability).element("status", SenderData.lastPresenceUpdate.status).up();
+    if (SenderData.lastPresenceUpdate.away) xml = xml.element("show", "away").up().element("status", SenderData.lastPresenceUpdate.status).up();
+    else xml = xml.element("status", SenderData.lastPresenceUpdate.status).up();
 
-    ClientData.client.send(xml.toString())
+    ClientData.client.send(xml.toString());
 }
 
 async function registerUser(discordId, username, email, plainPassword) {
@@ -299,6 +300,12 @@ async function registerUser(discordId, username, email, plainPassword) {
     if (plainPassword.length >= 128) return { message: "Your password must be less than 128 characters long.", status: 400 };
     if (plainPassword.length < 8) return { message: "Your password must be atleast 8 characters long.", status: 400 };
 
+    const allowedCharacters = (" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split("");
+    
+    for (let character of username) {
+        if (!allowedCharacters.includes(character)) return { message: "Your username has special characters, please remove them and try again.", status: 400 };
+    }
+
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     try {
@@ -316,7 +323,7 @@ async function registerUser(discordId, username, email, plainPassword) {
 }
 
 function DecodeBase64(str) {
-    return Buffer.from(str, 'base64').toString()
+    return Buffer.from(str, 'base64').toString();
 }
 
 module.exports = {
@@ -326,7 +333,6 @@ module.exports = {
     getItemShop,
     MakeID,
     sendXmppMessageToAll,
-    sendXmppMessageToClient,
     sendXmppMessageToId,
     getPresenceFromUser,
     registerUser,

@@ -27,6 +27,8 @@ module.exports = {
         ],
     },
     execute: async (interaction) => {
+        await interaction.deferReply({ ephemeral: true });
+
         const { options } = interaction;
 
         const discordId = interaction.user.id;
@@ -35,28 +37,18 @@ module.exports = {
         const password = options.get("password").value;
 
         await functions.registerUser(discordId, username, email, password).then(resp => {
-            if (resp.status >= 400) {
-                let embed = new MessageEmbed()
-                .setColor("#ff0000")
-                .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
-                .setFields(
-                    { name: 'Message', value: resp.message }
-                )
-                .setTimestamp()
-    
-                return interaction.reply({ embeds: [embed], ephemeral: true })
-            }
-
             let embed = new MessageEmbed()
-            .setColor("#56ff00")
+            .setColor(resp.status >= 400 ? "#ff0000" : "#56ff00")
             .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
             .setFields(
                 { name: 'Message', value: resp.message },
             )
             .setTimestamp()
 
-            interaction.channel.send({ embeds: [embed] });
-            interaction.reply({ content: "You successfully created an account!", ephemeral: true })
-        })
+            if (resp.status >= 400) return interaction.editReply({ embeds: [embed], ephemeral: true });
+
+            (interaction.channel ? interaction.channel : interaction.user).send({ embeds: [embed] });
+            interaction.editReply({ content: "You successfully created an account!", ephemeral: true });
+        });
     }
 }

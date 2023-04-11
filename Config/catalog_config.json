@@ -1,6 +1,5 @@
 {
     "//": "BR Item Shop Config",
-    "//2": "No need to restart backend if modified",
     "daily1": {
         "itemGrants": [""],
         "price": 0

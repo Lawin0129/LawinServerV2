@@ -1,121 +1,79 @@
 const jwt = require("jsonwebtoken");
 
-const tokens = require("../model/tokens.js");
 const User = require("../model/user.js");
 const error = require("../structs/error.js");
 
 async function verifyToken(req, res, next) {
-    if (!req.headers["authorization"] || !req.headers["authorization"].startsWith("bearer eg1~")) return error.createError(
+    let authErr = error.createError(
         "errors.com.epicgames.common.authorization.authorization_failed",
         `Authorization failed for ${req.originalUrl}`, 
-        [req.originalUrl], 1032, undefined, 401, res
+        [req.originalUrl], 1032, undefined
     );
 
-    const token = req.headers["authorization"].split("bearer eg1~")[1];
-    var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
+    if (!req.headers["authorization"] || !req.headers["authorization"].startsWith("bearer eg1~")) return res.status(401).json(authErr);
 
-    for (var i in jwtTokens) {
-        if (Array.isArray(jwtTokens[i])) {
-            try {
-                await jwtTokens.updateOne({ $pull: { [`${i}`]: null } });
-            } catch {}
-        }
-    }
+    const token = req.headers["authorization"].replace("bearer eg1~", "");
 
     try {
-        const decodedToken = jwt.decode(token);
+        const decodedToken = jwt.verify(token, global.JWT_SECRET);
 
-        if (!jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
-
-        var creation_date = new Date(decodedToken.creation_date);
-        if (DateAddHours(creation_date, decodedToken.hours_expire).getTime() <= new Date().getTime()) throw new Error("Expired token.")
+        if (!global.accessTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
 
         req.user = await User.findOne({ accountId: decodedToken.sub }).lean();
 
-        if (req.user.banned == true) return error.createError(
+        if (req.user.banned) return res.status(400).json(error.createError(
             "errors.com.epicgames.account.account_not_active",
             "Sorry, your account is inactive and may not login.", 
-            [], -1, undefined, 400, res
+            [], -1, undefined)
         );
 
         next();
-    } catch (err) {
-        if (jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) {
-            let index = jwtTokens.accessTokens.findIndex(i => i.token == `eg1~${token}`);
-            await jwtTokens.updateOne({ [`accessTokens.${index}`]: [] });
-            await jwtTokens.updateOne({ $pull: { "accessTokens": [] } });
-        }
+    } catch {
+        let accessIndex = global.accessTokens.findIndex(i => i.token == `eg1~${token}`);
+        if (accessIndex != -1) global.accessTokens.splice(accessIndex, 1);
         
-        return error.createError(
-            "errors.com.epicgames.common.authorization.authorization_failed",
-            `Authorization failed for ${req.originalUrl}`, 
-            [req.originalUrl], 1032, undefined, 401, res
-        );
+        return res.status(401).json(authErr);
     }
 }
 
 async function verifyClient(req, res, next) {
-    if (!req.headers["authorization"] || !req.headers["authorization"].startsWith("bearer eg1~")) return error.createError(
+    let authErr = error.createError(
         "errors.com.epicgames.common.authorization.authorization_failed",
         `Authorization failed for ${req.originalUrl}`, 
-        [req.originalUrl], 1032, undefined, 401, res
+        [req.originalUrl], 1032, undefined
     );
 
-    const token = req.headers["authorization"].split("bearer eg1~")[1];
-    var jwtTokens = await tokens.findOne({ accessTokens: { $exists: true }, refreshTokens: { $exists: true }, clientTokens: { $exists: true } });
+    if (!req.headers["authorization"] || !req.headers["authorization"].startsWith("bearer eg1~")) return res.status(401).json(authErr);
 
-    for (var i in jwtTokens) {
-        if (Array.isArray(jwtTokens[i])) {
-            try {
-                await jwtTokens.updateOne({ $pull: { [`${i}`]: null } });
-            } catch {}
-        }
-    }
+    const token = req.headers["authorization"].replace("bearer eg1~", "");
 
     try {
-        const decodedToken = jwt.decode(token);
+        const decodedToken = jwt.verify(token, global.JWT_SECRET);
 
-        if (!jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`) && !jwtTokens.clientTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
+        let findAccess = global.accessTokens.find(i => i.token == `eg1~${token}`);
 
-        var creation_date = new Date(decodedToken.creation_date);
-        if (DateAddHours(creation_date, decodedToken.hours_expire).getTime() <= new Date().getTime()) throw new Error("Expired token.")
+        if (!findAccess && !global.clientTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
 
-        if (jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) {
+        if (findAccess) {
             req.user = await User.findOne({ accountId: decodedToken.sub }).lean();
 
-            if (req.user.banned == true) return error.createError(
+            if (req.user.banned) return res.status(400).json(error.createError(
                 "errors.com.epicgames.account.account_not_active",
                 "Sorry, your account is inactive and may not login.", 
-                [], -1, undefined, 400, res
+                [], -1, undefined)
             );
         }
 
         next();
     } catch (err) {
-        if (jwtTokens.accessTokens.find(i => i.token == `eg1~${token}`)) {
-            let index = jwtTokens.accessTokens.findIndex(i => i.token == `eg1~${token}`);
-            await jwtTokens.updateOne({ [`accessTokens.${index}`]: [] });
-            await jwtTokens.updateOne({ $pull: { "accessTokens": [] } });
-        }
-        if (jwtTokens.clientTokens.find(i => i.token == `eg1~${token}`)) {
-            let index = jwtTokens.clientTokens.findIndex(i => i.token == `eg1~${token}`);
-            await jwtTokens.updateOne({ [`clientTokens.${index}`]: [] });
-            await jwtTokens.updateOne({ $pull: { "clientTokens": [] } });
-        }
+        let accessIndex = global.accessTokens.findIndex(i => i.token == `eg1~${token}`);
+        if (accessIndex != -1) global.accessTokens.splice(accessIndex, 1);
+
+        let clientIndex = global.clientTokens.findIndex(i => i.token == `eg1~${token}`);
+        if (clientIndex != -1) global.clientTokens.splice(clientIndex, 1);
         
-        return error.createError(
-            "errors.com.epicgames.common.authorization.authorization_failed",
-            `Authorization failed for ${req.originalUrl}`, 
-            [req.originalUrl], 1032, undefined, 401, res
-        );
+        return res.status(401).json(authErr);
     }
-}
-
-function DateAddHours(pdate, number) {
-    var date = pdate;
-    date.setHours(date.getHours() + number);
-
-    return date;
 }
 
 module.exports = {

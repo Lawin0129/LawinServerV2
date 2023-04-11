@@ -25,7 +25,7 @@ function xmpp() {
         msg += `${i == "0" ? "" : " "}${xmpp.arguments[i]}`;
     }
 
-    console.log(`\x1b[34mXMPP\x1b[0m: ${msg}`)
+    console.log(`\x1b[34mXMPP\x1b[0m: ${msg}`);
 }
 
 function error() {

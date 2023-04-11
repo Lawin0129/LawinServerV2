@@ -6,9 +6,9 @@
     "mongodb": {
         "database": "mongodb://127.0.0.1/lawindb"
     },
-    "clientsettings": {
-        "WARNING": "This can be exploited, make sure you trust the people (if anyone) who are going to be using this backend.",
-        "SaveFortniteSettings": false
+    "chat": {
+        "//": "Disabling global chat can help the server to perform faster as less resources are used.",
+        "EnableGlobalChat": false
     },
     "matchmakerIP": "127.0.0.1:80",
     "gameServerIP": "127.0.0.1:7777"

@@ -1512,31 +1512,202 @@
     }
   },
   "stats": {
+    "templateId": "profile_v2",
     "attributes": {
-      "survey_data": {},
-      "personal_offers": {},
-      "intro_game_played": true,
-      "import_friends_claimed": {},
-      "mtx_purchase_history": {
-        "purchases": []
+      "node_costs": {
+        "t1_main_nodepage_layer1": {
+          "Token:homebasepoints": 5
+        }
       },
-      "undo_cooldowns": [],
-      "mtx_affiliate_set_time": "",
-      "inventory_limit_bonus": 0,
-      "current_mtx_platform": "EpicPC",
-      "mtx_affiliate": "",
-      "forced_intro_played": "Coconut",
+      "mission_alert_redemption_record": {
+        "lastClaimTimesMap": {
+          "General": {
+            "missionAlertGUIDs": [
+              "",
+              "",
+              ""
+            ],
+            "lastClaimedTimes": [
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z"
+            ]
+          },
+          "StormLow": {
+            "missionAlertGUIDs": [
+              "",
+              "",
+              "",
+              ""
+            ],
+            "lastClaimedTimes": [
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z"
+            ]
+          },
+          "Halloween": {
+            "missionAlertGUIDs": [
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "lastClaimedTimes": [
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z"
+            ]
+          },
+          "Horde": {
+            "missionAlertGUIDs": [
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "lastClaimedTimes": [
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z"
+            ]
+          },
+          "Storm": {
+            "missionAlertGUIDs": [
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "lastClaimedTimes": [
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z",
+              "2016-11-20T21:27:32.998Z"
+            ]
+          }
+        },
+        "oldestClaimIndexForCategory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "twitch": {},
+      "client_settings": {
+        "pinnedQuestInstances": []
+      },
+      "level": 10,
+      "named_counters": {
+        "SubGameSelectCount_Campaign": {
+          "current_count": 0,
+          "last_incremented_time": ""
+        },
+        "SubGameSelectCount_Athena": {
+          "current_count": 0,
+          "last_incremented_time": ""
+        }
+      },
+      "default_hero_squad_id": "",
+      "collection_book": {
+        "pages": [],
+        "maxBookXpLevelAchieved": 0
+      },
+      "quest_manager": {
+        "dailyLoginInterval": "2017-12-25T01:44:10.602Z",
+        "dailyQuestRerolls": 1
+      },
+      "bans": {},
+      "gameplay_stats": [
+        {
+          "statName": "zonescompleted",
+          "statValue": 1
+        }
+      ],
+      "inventory_limit_bonus": 100000,
+      "current_mtx_platform": "Epic",
       "weekly_purchases": {},
-      "daily_purchases": {},
-      "ban_history": {},
-      "in_app_purchases": {},
-      "permissions": [],
-      "undo_timeout": "min",
+      "daily_purchases": {
+        "lastInterval": "2017-08-29T00:00:00.000Z",
+        "purchaseList": {
+          "1F6B613D4B7BAD47D8A93CAEED2C4996": 1
+        }
+      },
+      "mode_loadouts": [
+        {
+          "loadoutName": "Default",
+          "selectedGadgets": [
+            "",
+            ""
+          ]
+        }
+      ],
+      "in_app_purchases": {
+        "receipts": [
+          "EPIC:0aba47abf15143f18370dbc70b910b14",
+          "EPIC:ee397e98af0042159fec830aea1224d5"
+        ],
+        "fulfillmentCounts": {
+          "0A6CB5B346A149F31A4C3FBDF4BBC198": 3,
+          "DEF6D31D416227E7D73F65B27288ED6F": 1,
+          "82ADCC874CFC2D47927208BAE871CF2B": 1,
+          "F0033207441AC38CD704718B91B2C8EF": 1
+        }
+      },
+      "daily_rewards": {
+        "nextDefaultReward": 0,
+        "totalDaysLoggedIn": 0,
+        "lastClaimDate": "0001-01-01T00:00:00.000Z",
+        "additionalSchedules": {
+          "founderspackdailyrewardtoken": {
+            "rewardsClaimed": 0,
+            "claimedToday": true
+          }
+        }
+      },
       "monthly_purchases": {},
-      "allowed_to_send_gifts": true,
-      "mfa_enabled": true,
-      "allowed_to_receive_gifts": true,
-      "gift_history": {}
+      "xp": 0,
+      "homebase": {
+        "townName": "",
+        "bannerIconId": "OT11Banner",
+        "bannerColorId": "DefaultColor15",
+        "flagPattern": -1,
+        "flagColor": -1
+      },
+      "packs_granted": 13
     }
   },
   "commandRevision": 0

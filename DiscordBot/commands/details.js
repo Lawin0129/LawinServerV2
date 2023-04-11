@@ -7,13 +7,16 @@ module.exports = {
         description: "Retrieves your account info."
     },
     execute: async (interaction) => {
+        await interaction.deferReply({ ephemeral: true });
+
         const user = await User.findOne({ discordId: interaction.user.id }).lean();
-        if (!user) return interaction.reply({ content: "You do not have a registered account!", ephemeral: true });
+        if (!user) return interaction.editReply({ content: "You do not have a registered account!", ephemeral: true });
 
         let embed = new MessageEmbed()
         .setColor("#56ff00")
         .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
         .setFields(
+            { name: "Created", value: `${new Date(user.created)}`.substring(0, 15) },
             { name: "Banned?", value: `${user.banned}` },
             { name: "Account ID", value: user.accountId },
             { name: 'Username', value: user.username },
@@ -21,6 +24,6 @@ module.exports = {
         )
         .setTimestamp()
 
-        interaction.reply({ embeds: [embed], ephemeral: true });
+        interaction.editReply({ embeds: [embed], ephemeral: true });
     }
 }

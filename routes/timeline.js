@@ -4,10 +4,10 @@ const app = express.Router();
 const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 const functions = require("../structs/functions.js");
 
-app.get("/fortnite/api/calendar/v1/timeline", verifyClient, async (req, res) => {
+app.get("/fortnite/api/calendar/v1/timeline", (req, res) => {
     const memory = functions.GetVersionInfo(req);
 
-    var activeEvents = [
+    let activeEvents = [
         {
             "eventType": `EventFlag.Season${memory.season}`,
             "activeUntil": "9999-01-01T00:00:00.000Z",
@@ -51,7 +51,7 @@ app.get("/fortnite/api/calendar/v1/timeline", verifyClient, async (req, res) => 
         eventsTimeOffsetHrs: 0,
         cacheIntervalMins: 10,
         currentTime: new Date().toISOString()
-    })
-})
+    });
+});
 
 module.exports = app;

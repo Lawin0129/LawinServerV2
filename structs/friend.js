@@ -41,9 +41,6 @@ async function sendFriendReq(fromId, toId) {
     let to = await Friends.findOne({ accountId: toId });
     let toFriends = to.list;
 
-    if (fromFriends.blocked.find(i => i.accountId == to.accountId)) return;
-    if (toFriends.blocked.find(i => i.accountId == from.accountId)) return;
-
     fromFriends.outgoing.push({ accountId: to.accountId, created: new Date().toISOString() });
 
     functions.sendXmppMessageToId({
@@ -87,8 +84,10 @@ async function acceptFriendReq(fromId, toId) {
     let to = await Friends.findOne({ accountId: toId });
     let toFriends = to.list;
 
-    if (fromFriends.incoming.find(i => i.accountId == to.accountId)) {
-        fromFriends.incoming.splice(fromFriends.incoming.findIndex(i => i.accountId == to.accountId), 1);
+    let incomingIndex = fromFriends.incoming.findIndex(i => i.accountId == to.accountId);
+
+    if (incomingIndex != -1) {
+        fromFriends.incoming.splice(incomingIndex, 1);
         fromFriends.accepted.push({ accountId: to.accountId, created: new Date().toISOString() });
 
         functions.sendXmppMessageToId({
@@ -134,16 +133,20 @@ async function deleteFriend(fromId, toId) {
     let to = await Friends.findOne({ accountId: toId });
     let toFriends = to.list;
 
-    var removed = false;
+    let removed = false;
 
-    for (var listType in fromFriends) {
-        if (fromFriends[listType].find(i => i.accountId == to.accountId)) {
-            fromFriends[listType].splice(fromFriends[listType].findIndex(i => i.accountId == to.accountId), 1);
+    for (let listType in fromFriends) {
+        let findFriend = fromFriends[listType].findIndex(i => i.accountId == to.accountId);
+        let findToFriend = toFriends[listType].findIndex(i => i.accountId == from.accountId);
+
+        if (findFriend != -1) {
+            fromFriends[listType].splice(findFriend, 1);
             removed = true;
         }
 
-        if (listType == "blocked") break;
-        if (toFriends[listType].find(i => i.accountId == from.accountId)) toFriends[listType].splice(toFriends[listType].findIndex(i => i.accountId == from.accountId), 1);
+        if (listType == "blocked") continue;
+
+        if (findToFriend != -1) toFriends[listType].splice(findToFriend, 1);
     }
 
     if (removed == true) {
