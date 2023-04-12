@@ -26,6 +26,8 @@ app.get("/account/api/public/account", async (req, res) => {
 
         if (users) {
             for (let user of users) {
+                if (response.length >= 100) break;
+                
                 response.push({
                     id: user.accountId,
                     displayName: user.username,
@@ -65,6 +67,8 @@ app.get("/api/v1/search/:accountId", async (req, res) => {
     let users = await User.find({ username_lower: new RegExp(`^${req.query.prefix.toLowerCase()}`), banned: false }).lean();
 
     for (let user of users) {
+        if (response.length >= 100) break;
+
         response.push({
             accountId: user.accountId,
             matches: [
