@@ -48,6 +48,8 @@ wss.on('listening', () => {
 });
 
 wss.on('connection', async (ws) => {
+    ws.on('error', () => {});
+
     // Start matchmaker if it's not connecting for xmpp.
     if (ws.protocol.toLowerCase() != "xmpp") return matchmaker(ws);
 

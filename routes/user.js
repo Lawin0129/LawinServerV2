@@ -53,6 +53,35 @@ app.get("/account/api/public/account/displayName/:displayName", async (req, res)
     });
 });
 
+app.get("/api/v1/search/:accountId", async (req, res) => {
+    let response = [];
+
+    if (typeof req.query.prefix != "string") return res.status(400).json(error.createError(
+        "errors.com.epicgames.bad_request",
+        "Required String parameter 'prefix' is not present", 
+        undefined, 1001, undefined)
+    );
+
+    let users = await User.find({ username_lower: new RegExp(`^${req.query.prefix.toLowerCase()}`), banned: false }).lean();
+
+    for (let user of users) {
+        response.push({
+            accountId: user.accountId,
+            matches: [
+                {
+                    "value": user.username,
+                    "platform": "epic"
+                }
+            ],
+            matchType: req.query.prefix.toLowerCase() == user.username_lower ? "exact" : "prefix",
+            epicMutuals: 0,
+            sortPosition: response.length
+        });
+    }
+    
+    res.json(response);
+});
+
 app.get("/account/api/public/account/:accountId", verifyToken, (req, res) => {
     res.json({
         id: req.user.accountId,
