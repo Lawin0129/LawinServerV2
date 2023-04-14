@@ -29,20 +29,19 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    let missingFields = [];
-    if (!req.body.itemIds) missingFields.push("itemIds");
+    let missingFields = { fields: [] };
 
-    if (missingFields.length > 0) return res.status(400).json(error.createError(
+    checkFields(["itemIds"], missingFields, req.body);
+
+    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.join(", ")}]`], 1040, undefined)
+        `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
     );
 
-    if (!Array.isArray(req.body.itemIds)) return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'itemIds' is not an array.`,
-        ["itemIds"], 1040, undefined)
-    );
+    if (!Array.isArray(req.body.itemIds)) return res.status(400).json(ValidationError("itemIds", "an array"));
+
+    if (!profile.items) profile.items = {};
     
     for (let i in req.body.itemIds) {
         if (!profile.items[req.body.itemIds[i]]) continue;
@@ -112,27 +111,20 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    let missingFields = [];
-    if (!req.body.itemIds) missingFields.push("itemIds");
-    if (!req.body.itemFavStatus) missingFields.push("itemFavStatus");
+    let missingFields = { fields: [] };
 
-    if (missingFields.length > 0) return res.status(400).json(error.createError(
+    checkFields(["itemIds","itemFavStatus"], missingFields, req.body);
+
+    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.join(", ")}]`], 1040, undefined)
+        `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
     );
 
-    if (!Array.isArray(req.body.itemIds)) return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'itemIds' is not an array.`,
-        ["itemIds"], 1040, undefined)
-    );
+    if (!Array.isArray(req.body.itemIds)) return res.status(400).json(ValidationError("itemIds", "an array"));
+    if (!Array.isArray(req.body.itemFavStatus)) return res.status(400).json(ValidationError("itemFavStatus", "an array"));
 
-    if (!Array.isArray(req.body.itemFavStatus)) return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'itemFavStatus' is not an array.`,
-        ["itemFavStatus"], 1040, undefined)
-    );
+    if (!profile.items) profile.items = {};
 
     for (let i in req.body.itemIds) {
         if (!profile.items[req.body.itemIds[i]]) continue;
@@ -201,27 +193,18 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    let missingFields = [];
-    if (!req.body.homebaseBannerIconId) missingFields.push("homebaseBannerIconId");
-    if (!req.body.homebaseBannerColorId) missingFields.push("homebaseBannerColorId");
+    let missingFields = { fields: [] };
 
-    if (missingFields.length > 0) return res.status(400).json(error.createError(
+    checkFields(["homebaseBannerIconId","homebaseBannerColorId"], missingFields, req.body);
+
+    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.join(", ")}]`], 1040, undefined)
+        `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
     );
 
-    if (typeof req.body.homebaseBannerIconId != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'homebaseBannerIconId' is not a string.`,
-        ["homebaseBannerIconId"], 1040, undefined)
-    );
-
-    if (typeof req.body.homebaseBannerColorId != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'homebaseBannerColorId' is not a string.`,
-        ["homebaseBannerColorId"], 1040, undefined)
-    );
+    if (typeof req.body.homebaseBannerIconId != "string") return res.status(400).json(ValidationError("homebaseBannerIconId", "a string"));
+    if (typeof req.body.homebaseBannerColorId != "string") return res.status(400).json(ValidationError("homebaseBannerColorId", "a string"));
 
     let bannerProfileId = memory.build < 3.5 ? "profile0" : "common_core";
 
@@ -231,8 +214,10 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
     for (let itemId in profiles.profiles[bannerProfileId].items) {
         let templateId = profiles.profiles[bannerProfileId].items[itemId].templateId;
 
-        if (templateId.toLowerCase() == `HomebaseBannerIcon:${req.body.homebaseBannerIconId}`.toLowerCase()) HomebaseBannerIconID = itemId;
-        if (templateId.toLowerCase() == `HomebaseBannerColor:${req.body.homebaseBannerColorId}`.toLowerCase()) HomebaseBannerColorID = itemId;
+        if (templateId.toLowerCase() == `HomebaseBannerIcon:${req.body.homebaseBannerIconId}`.toLowerCase()) { HomebaseBannerIconID = itemId; continue; }
+        if (templateId.toLowerCase() == `HomebaseBannerColor:${req.body.homebaseBannerColorId}`.toLowerCase()) { HomebaseBannerColorID = itemId; continue; }
+
+        if (HomebaseBannerIconID && HomebaseBannerColorID) break;
     }
 
     if (!HomebaseBannerIconID) return res.status(400).json(error.createError(
@@ -246,6 +231,8 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
         `Banner template 'HomebaseBannerColor:${req.body.homebaseBannerColorId}' not found in profile`, 
         [`HomebaseBannerColor:${req.body.homebaseBannerColorId}`], 16006, undefined)
     );
+
+    if (!profile.items) profile.items = {};
 
     let activeLoadoutId = profile.stats.attributes.loadouts[profile.stats.attributes.active_loadout_index];
 
@@ -332,26 +319,20 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
         "athenaloadingscreen:lsid_random"
     ];
 
-    let missingFields = [];
-    if (!req.body.slotName) missingFields.push("slotName");
+    let missingFields = { fields: [] };
 
-    if (missingFields.length > 0) return res.status(400).json(error.createError(
+    checkFields(["slotName"], missingFields, req.body);
+
+    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.join(", ")}]`], 1040, undefined)
+        `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
     );
 
-    if (typeof req.body.itemToSlot != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'itemToSlot' is not a string.`,
-        ["itemToSlot"], 1040, undefined)
-    );
+    if (typeof req.body.itemToSlot != "string") return res.status(400).json(ValidationError("itemToSlot", "a string"));
+    if (typeof req.body.slotName != "string") return res.status(400).json(ValidationError("slotName", "a string"));
 
-    if (typeof req.body.slotName != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'slotName' is not a string.`,
-        ["slotName"], 1040, undefined)
-    );
+    if (!profile.items) profile.items = {};
 
     if (!profile.items[req.body.itemToSlot] && req.body.itemToSlot) {
         let item = req.body.itemToSlot.toLowerCase();
@@ -519,34 +500,21 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    let missingFields = [];
-    if (!req.body.bannerIconTemplateName) missingFields.push("bannerIconTemplateName");
-    if (!req.body.bannerColorTemplateName) missingFields.push("bannerColorTemplateName");
-    if (!req.body.lockerItem) missingFields.push("lockerItem");
+    let missingFields = { fields: [] };
 
-    if (missingFields.length > 0) return res.status(400).json(error.createError(
+    checkFields(["bannerIconTemplateName","bannerColorTemplateName","lockerItem"], missingFields, req.body);
+
+    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.join(", ")}]`], 1040, undefined)
+        `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
     );
 
-    if (typeof req.body.lockerItem != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'lockerItem' is not a string.`,
-        ["lockerItem"], 1040, undefined)
-    );
+    if (typeof req.body.lockerItem != "string") return res.status(400).json(ValidationError("lockerItem", "a string"));
+    if (typeof req.body.bannerIconTemplateName != "string") return res.status(400).json(ValidationError("bannerIconTemplateName", "a string"));
+    if (typeof req.body.bannerColorTemplateName != "string") return res.status(400).json(ValidationError("bannerColorTemplateName", "a string"));
 
-    if (typeof req.body.bannerIconTemplateName != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'bannerIconTemplateName' is not a string.`,
-        ["bannerIconTemplateName"], 1040, undefined)
-    );
-
-    if (typeof req.body.bannerColorTemplateName != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'bannerColorTemplateName' is not a string.`,
-        ["bannerColorTemplateName"], 1040, undefined)
-    );
+    if (!profile.items) profile.items = {};
 
     if (!profile.items[req.body.lockerItem]) return res.status(400).json(error.createError(
         "errors.com.epicgames.fortnite.id_invalid",
@@ -568,8 +536,10 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
     for (let itemId in profiles.profiles[bannerProfileId].items) {
         let templateId = profiles.profiles[bannerProfileId].items[itemId].templateId;
 
-        if (templateId.toLowerCase() == `HomebaseBannerIcon:${req.body.bannerIconTemplateName}`.toLowerCase()) HomebaseBannerIconID = itemId;
-        if (templateId.toLowerCase() == `HomebaseBannerColor:${req.body.bannerColorTemplateName}`.toLowerCase()) HomebaseBannerColorID = itemId;
+        if (templateId.toLowerCase() == `HomebaseBannerIcon:${req.body.bannerIconTemplateName}`.toLowerCase()) { HomebaseBannerIconID = itemId; continue; }
+        if (templateId.toLowerCase() == `HomebaseBannerColor:${req.body.bannerColorTemplateName}`.toLowerCase()) { HomebaseBannerColorID = itemId; continue; }
+
+        if (HomebaseBannerIconID && HomebaseBannerColorID) break;
     }
 
     if (!HomebaseBannerIconID) return res.status(400).json(error.createError(
@@ -669,33 +639,21 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
         "athenaloadingscreen:lsid_random"
     ];
 
-    let missingFields = [];
-    if (!req.body.category) missingFields.push("category");
-    if (!req.body.lockerItem) missingFields.push("lockerItem");
+    let missingFields = { fields: [] };
 
-    if (missingFields.length > 0) return res.status(400).json(error.createError(
+    checkFields(["category","lockerItem"], missingFields, req.body);
+
+    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. [${missingFields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.join(", ")}]`], 1040, undefined)
+        `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
     );
 
-    if (typeof req.body.itemToSlot != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'itemToSlot' is not a string.`,
-        ["itemToSlot"], 1040, undefined)
-    );
+    if (typeof req.body.itemToSlot != "string") return res.status(400).json(ValidationError("itemToSlot", "a string"));
+    if (typeof req.body.lockerItem != "string") return res.status(400).json(ValidationError("lockerItem", "a string"));
+    if (typeof req.body.category != "string") return res.status(400).json(ValidationError("category", "a string"));
 
-    if (typeof req.body.lockerItem != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'lockerItem' is not a string.`,
-        ["lockerItem"], 1040, undefined)
-    );
-
-    if (typeof req.body.category != "string") return res.status(400).json(error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        `Validation Failed. 'category' is not a string.`,
-        ["category"], 1040, undefined)
-    );
+    if (!profile.items) profile.items = {};
 
     let itemToSlotID = "";
 
@@ -904,5 +862,19 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
         responseVersion: 1
     });
 });
+
+function checkFields(fields, missingFields, body) {
+    fields.forEach(field => {
+        if (!body[field]) missingFields.fields.push(field);
+    });
+}
+
+function ValidationError(field, type) {
+    return error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. '${field}' is not ${type}.`,
+        [field], 1040, undefined
+    );
+}
 
 module.exports = app;
