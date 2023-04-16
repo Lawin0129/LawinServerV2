@@ -14,6 +14,8 @@ const port = 80;
 const wss = new WebSocket({ server: app.listen(port) });
 const matchmaker = require("../matchmaker/matchmaker.js");
 
+let domain = "xmpp.lawinserver.net";
+
 global.Clients = [];
 
 // multi user chat rooms (global chat/party chat)
@@ -74,7 +76,7 @@ wss.on('connection', async (ws) => {
             case "open":
                 ws.send(XMLBuilder.create("open")
                 .attribute("xmlns", "urn:ietf:params:xml:ns:xmpp-framing")
-                .attribute("from", "prod.ol.epicgames.com")
+                .attribute("from", domain)
                 .attribute("id", ID)
                 .attribute("version", "1.0")
                 .attribute("xml:lang", "en").toString());
@@ -138,7 +140,7 @@ wss.on('connection', async (ws) => {
                         if (!findResource.content) return;
 
                         resource = findResource.content;
-                        jid = `${accountId}@prod.ol.epicgames.com/${resource}`;
+                        jid = `${accountId}@${domain}/${resource}`;
 
                         ws.send(XMLBuilder.create("iq")
                         .attribute("to", jid)
@@ -155,7 +157,7 @@ wss.on('connection', async (ws) => {
 
                         ws.send(XMLBuilder.create("iq")
                         .attribute("to", jid)
-                        .attribute("from", "prod.ol.epicgames.com")
+                        .attribute("from", domain)
                         .attribute("id", "_xmpp_session1")
                         .attribute("xmlns", "jabber:client")
                         .attribute("type", "result").toString());
@@ -168,7 +170,7 @@ wss.on('connection', async (ws) => {
 
                         ws.send(XMLBuilder.create("iq")
                         .attribute("to", jid)
-                        .attribute("from", "prod.ol.epicgames.com")
+                        .attribute("from", domain)
                         .attribute("id", msg.root.attributes.id)
                         .attribute("xmlns", "jabber:client")
                         .attribute("type", "result").toString());
@@ -247,7 +249,7 @@ wss.on('connection', async (ws) => {
                 if (msg.root.attributes.type == "unavailable") {
                     if (!msg.root.attributes.to) return;
 
-                    if (msg.root.attributes.to.endsWith("@muc.prod.ol.epicgames.com") || msg.root.attributes.to.split("/")[0].endsWith("@muc.prod.ol.epicgames.com")) {
+                    if (msg.root.attributes.to.endsWith(`@muc.${domain}`) || msg.root.attributes.to.split("/")[0].endsWith(`@muc.${domain}`)) {
                         if (msg.root.attributes.to.toLowerCase().startsWith("party-")) {
                             let roomName = msg.root.attributes.to.split("@")[0];
 
@@ -266,7 +268,7 @@ wss.on('connection', async (ws) => {
                             .attribute("type", "unavailable")
                             .element("x").attribute("xmlns", "http://jabber.org/protocol/muc#user")
                             .element("item")
-                            .attribute("nick", getMUCmember(roomName, displayName, accountId, resource).replace(`${roomName}@muc.prod.ol.epicgames.com/`, ""))
+                            .attribute("nick", getMUCmember(roomName, displayName, accountId, resource).replace(`${roomName}@muc.${domain}/`, ""))
                             .attribute("jid", jid)
                             .attribute("role", "none").up()
                             .element("status").attribute("code", "110").up()
@@ -297,7 +299,7 @@ wss.on('connection', async (ws) => {
                         .attribute("xmlns", "jabber:client")
                         .element("x").attribute("xmlns", "http://jabber.org/protocol/muc#user")
                         .element("item")
-                        .attribute("nick", getMUCmember(roomName, displayName, accountId, resource).replace(`${roomName}@muc.prod.ol.epicgames.com/`, ""))
+                        .attribute("nick", getMUCmember(roomName, displayName, accountId, resource).replace(`${roomName}@muc.${domain}/`, ""))
                         .attribute("jid", jid)
                         .attribute("role", "participant")
                         .attribute("affiliation", "none").up()
@@ -317,24 +319,24 @@ wss.on('connection', async (ws) => {
                             .element("x")
                             .attribute("xmlns", "http://jabber.org/protocol/muc#user")
                             .element("item")
-                            .attribute("nick", getMUCmember(roomName, ClientData.displayName, ClientData.accountId, ClientData.resource).replace(`${roomName}@muc.prod.ol.epicgames.com/`, ""))
+                            .attribute("nick", getMUCmember(roomName, ClientData.displayName, ClientData.accountId, ClientData.resource).replace(`${roomName}@muc.${domain}/`, ""))
                             .attribute("jid", ClientData.jid)
                             .attribute("role", "participant")
                             .attribute("affiliation", "none").up().up().toString());
 
-                            if (accountId.toLowerCase() != ClientData.accountId.toLowerCase()) {
-                                ClientData.client.send(XMLBuilder.create("presence")
-                                .attribute("from", getMUCmember(roomName, displayName, accountId, resource))
-                                .attribute("to", ClientData.jid)
-                                .attribute("xmlns", "jabber:client")
-                                .element("x")
-                                .attribute("xmlns", "http://jabber.org/protocol/muc#user")
-                                .element("item")
-                                .attribute("nick", getMUCmember(roomName, displayName, accountId, resource).replace(`${roomName}@muc.prod.ol.epicgames.com/`, ""))
-                                .attribute("jid", jid)
-                                .attribute("role", "participant")
-                                .attribute("affiliation", "none").up().up().toString());
-                            }
+                            if (accountId == ClientData.accountId) return;
+
+                            ClientData.client.send(XMLBuilder.create("presence")
+                            .attribute("from", getMUCmember(roomName, displayName, accountId, resource))
+                            .attribute("to", ClientData.jid)
+                            .attribute("xmlns", "jabber:client")
+                            .element("x")
+                            .attribute("xmlns", "http://jabber.org/protocol/muc#user")
+                            .element("item")
+                            .attribute("nick", getMUCmember(roomName, displayName, accountId, resource).replace(`${roomName}@muc.${domain}/`, ""))
+                            .attribute("jid", jid)
+                            .attribute("role", "participant")
+                            .attribute("affiliation", "none").up().up().toString());
                         });
 
                         return;
@@ -405,19 +407,23 @@ function RemoveClient(ws, joinedMUCs) {
 
     let partyId = "";
 
-    switch (true) {
-        case (!ClientStatus.Properties): break;
-        case (isObject(ClientStatus.Properties)): {
-            for (let key in ClientStatus.Properties) {
-                if (key.toLowerCase().startsWith("party")) {
-                    if (ClientStatus.Properties[key] && isObject(ClientStatus.Properties[key])) partyId = ClientStatus.Properties[key].partyId;
+    try {
+        switch (true) {
+            case (!ClientStatus.Properties): break;
+            case (isObject(ClientStatus.Properties)): {
+                for (let key in ClientStatus.Properties) {
+                    if (key.toLowerCase().startsWith("party.joininfo")) {
+                        if (ClientStatus.Properties[key] && isObject(ClientStatus.Properties[key])) partyId = ClientStatus.Properties[key].partyId;
+                    }
                 }
             }
         }
-    }
+    } catch {}
 
-    global.Clients.forEach(ClientData => {
-        if (client.accountId.toLowerCase() != ClientData.accountId.toLowerCase()) {
+    if (partyId) {
+        global.Clients.forEach(ClientData => {
+            if (client.accountId == ClientData.accountId) return;
+
             ClientData.client.send(XMLBuilder.create("message")
             .attribute("id", functions.MakeID().replace(/-/ig, "").toUpperCase())
             .attribute("from", client.jid)
@@ -432,8 +438,8 @@ function RemoveClient(ws, joinedMUCs) {
                 },
                 "timestamp": new Date().toISOString()
             })).up().toString());
-        }
-    });
+        });
+    }
 
     log.xmpp(`An xmpp client with the displayName ${client.displayName} has logged out.`);
 }
@@ -505,7 +511,7 @@ function sendXmppMessageToClient(senderJid, msg, body) {
 }
 
 function getMUCmember(roomName, displayName, accountId, resource) {
-    return `${roomName}@muc.prod.ol.epicgames.com/${encodeURI(displayName)}:${accountId}:${resource}`;
+    return `${roomName}@muc.${domain}/${encodeURI(displayName)}:${accountId}:${resource}`;
 }
 
 function isObject(value) {

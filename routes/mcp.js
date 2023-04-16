@@ -29,9 +29,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    let missingFields = { fields: [] };
-
-    checkFields(["itemIds"], missingFields, req.body);
+    let missingFields = checkFields(["itemIds"], req.body);
 
     if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
@@ -111,9 +109,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    let missingFields = { fields: [] };
-
-    checkFields(["itemIds","itemFavStatus"], missingFields, req.body);
+    let missingFields = checkFields(["itemIds","itemFavStatus"], req.body);
 
     if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
@@ -193,9 +189,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    let missingFields = { fields: [] };
-
-    checkFields(["homebaseBannerIconId","homebaseBannerColorId"], missingFields, req.body);
+    let missingFields = checkFields(["homebaseBannerIconId","homebaseBannerColorId"], req.body);
 
     if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
@@ -319,9 +313,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
         "athenaloadingscreen:lsid_random"
     ];
 
-    let missingFields = { fields: [] };
-
-    checkFields(["slotName"], missingFields, req.body);
+    let missingFields = checkFields(["slotName"], req.body);
 
     if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
@@ -431,6 +423,10 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
             if (!slotNames.includes(req.body.slotName)) break;
             if (!profile.items[activeLoadoutId].attributes.locker_slots_data.slots[req.body.slotName]) break;
 
+            if (req.body.slotName == "Pickaxe" || req.body.slotName == "Glider") {
+                if (!req.body.itemToSlot) break;
+            }
+
             profile.stats.attributes[(`favorite_${req.body.slotName}`).toLowerCase()] = req.body.itemToSlot;
             profile.items[activeLoadoutId].attributes.locker_slots_data.slots[req.body.slotName].items = [templateId];
 
@@ -500,9 +496,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
     let QueryRevision = req.query.rvn || -1;
     let StatChanged = false;
 
-    let missingFields = { fields: [] };
-
-    checkFields(["bannerIconTemplateName","bannerColorTemplateName","lockerItem"], missingFields, req.body);
+    let missingFields = checkFields(["bannerIconTemplateName","bannerColorTemplateName","lockerItem"], req.body);
 
     if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
@@ -639,9 +633,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
         "athenaloadingscreen:lsid_random"
     ];
 
-    let missingFields = { fields: [] };
-
-    checkFields(["category","lockerItem"], missingFields, req.body);
+    let missingFields = checkFields(["category","lockerItem"], req.body);
 
     if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
         "errors.com.epicgames.validation.validation_failed",
@@ -766,6 +758,10 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
         default:
             if (!profile.items[req.body.lockerItem].attributes.locker_slots_data.slots[req.body.category]) break;
 
+            if (req.body.category == "Pickaxe" || req.body.category == "Glider") {
+                if (!req.body.itemToSlot) break;
+            }
+
             profile.items[req.body.lockerItem].attributes.locker_slots_data.slots[req.body.category].items = [req.body.itemToSlot];
             profile.stats.attributes[(`favorite_${req.body.category}`).toLowerCase()] = itemToSlotID || req.body.itemToSlot;
 
@@ -863,10 +859,14 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
     });
 });
 
-function checkFields(fields, missingFields, body) {
+function checkFields(fields, body) {
+    let missingFields = { fields: [] };
+
     fields.forEach(field => {
         if (!body[field]) missingFields.fields.push(field);
     });
+
+    return missingFields;
 }
 
 function ValidationError(field, type) {
