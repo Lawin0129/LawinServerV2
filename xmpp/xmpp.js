@@ -14,7 +14,7 @@ const port = 80;
 const wss = new WebSocket({ server: app.listen(port) });
 const matchmaker = require("../matchmaker/matchmaker.js");
 
-let domain = "xmpp.lawinserver.net";
+let domain = "prod.ol.epicgames.com";
 
 global.Clients = [];
 
