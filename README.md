@@ -1,19 +1,24 @@
 # LawinServerV2
-### LawinServer V2 is a fortnite backend that features an account system and xmpp.
+### LawinServer V2 is a fortnite backend written in Node.js that features an account system and xmpp.
 
 ## Features
 ### LawinServer V2
-- CloudStorage and ClientSettings (Settings Saving)
-- Changing items in locker
-- Changing banner icon and banner color
-- Changing item edit styles
-- Favoriting items
-- Marking items as seen
-- Managing friends (e.g. adding friends)
+* CloudStorage and ClientSettings (Settings Saving).
+* Locker:
+    + Changing items.
+    + Changing banner icon and banner color.
+    + Changing item edit styles.
+    + Favoriting items.
+    + Marking items as seen.
+* Friends:
+    + Adding friends.
+    + Accepting friend requests.
+    + Removing friends.
+    + Blocking friends.
 ### XMPP Features
-- Parties (builds 3.5 to 14.50)
-- Chat (whispering, global chat, party chat)
-- Friends
+- Parties (builds 3.5 to 14.50).
+- Chat (whispering, global chat, party chat).
+- Friends.
 ### NOTE: LawinServerV2 does not support Save the World.
 
 ## Discord Bot Commands
@@ -23,6 +28,7 @@
 - `/exchange-code` - Generates an exchange code for login. (One time use for each code and if not used it expires after 5 mins).
 - `/change-username {newUsername}` - You can change your username using this command.
 - `/change-password {newPassword}` - You can change your password using this command.
+- `/sign-out-of-all-sessions` - Signs you out if you have an active session.
 ### Moderation Commands:
 - You can only use the moderation commands if you are a moderator.
 - `/ban {targetUsername}` - Ban a user from the backend by their username.
@@ -32,10 +38,10 @@
 1) Go to Config/config.json in the directory you extracted LawinServerV2 into.
 2) Open it, you should see a "moderators" section in the file.
 3) You have to get your discord id and replace discordId with it.
-4) You can set multiple moderators like this `["discordId","discordId2"]`
+4) You can set multiple moderators like this `["discordId","discordId2"]`.
 
 ## Hosting for others
-You are allowed to host for others, however please don't remove my credits from `responses/contentpages.json`
+You are allowed to host for others, however please credit me and don't remove my credits from `responses/contentpages.json`.
 
 ## How to host LawinServerV2
 1) Install [NodeJS](https://nodejs.org/en/) and [MongoDB](https://www.mongodb.com/try/download/community).

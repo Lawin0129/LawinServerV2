@@ -19,6 +19,9 @@ module.exports = {
         const user = await User.findOne({ discordId: interaction.user.id });
         if (!user) return interaction.editReply({ content: "You do not have a registered account!", ephemeral: true });
 
+        let accessToken = global.accessTokens.find(i => i.accountId == user.accountId);
+        if (accessToken) return interaction.editReply({ content: "Failed to change username as you are currently logged in to Fortnite.\nRun the /sign-out-of-all-sessions command to sign out.", ephemeral: true });
+
         const { options } = interaction;
 
         let username = options.get("username").value;

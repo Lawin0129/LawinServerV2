@@ -20,10 +20,10 @@ app.post("/account/api/oauth/token", async (req, res) => {
 
         clientId = clientId[0];
     } catch {
-        return res.status(400).json(error.createError(
+        return error.createError(
             "errors.com.epicgames.common.oauth.invalid_client",
             "It appears that your Authorization header may be invalid or not present, please verify that you are sending the correct headers.", 
-            [], 1011, "invalid_client")
+            [], 1011, "invalid_client", 400, res
         );
     }
 
@@ -50,32 +50,32 @@ app.post("/account/api/oauth/token", async (req, res) => {
         break;
 
         case "password":
-            if (!req.body.username || !req.body.password) return res.status(400).json(error.createError(
+            if (!req.body.username || !req.body.password) return error.createError(
                 "errors.com.epicgames.common.oauth.invalid_request",
                 "Username/password is required.", 
-                [], 1013, "invalid_request")
+                [], 1013, "invalid_request", 400, res
             );
             const { username: email, password: password } = req.body;
 
             req.user = await User.findOne({ email: email.toLowerCase() }).lean();
 
-            let err = error.createError(
+            let err = () => error.createError(
                 "errors.com.epicgames.account.invalid_account_credentials",
                 "Your e-mail and/or password are incorrect. Please check them and try again.", 
-                [], 18031, "invalid_grant"
+                [], 18031, "invalid_grant", 400, res
             );
 
-            if (!req.user) return res.status(400).json(err);
+            if (!req.user) return err();
             else {
-                if (!await bcrypt.compare(password, req.user.password)) return res.status(400).json(err);
+                if (!await bcrypt.compare(password, req.user.password)) return err();
             }
         break;
 
         case "refresh_token":
-            if (!req.body.refresh_token) return res.status(400).json(error.createError(
+            if (!req.body.refresh_token) return error.createError(
                 "errors.com.epicgames.common.oauth.invalid_request",
                 "Refresh token is required.", 
-                [], 1013, "invalid_request")
+                [], 1013, "invalid_request", 400, res
             );
 
             const refresh_token = req.body.refresh_token;
@@ -84,16 +84,16 @@ app.post("/account/api/oauth/token", async (req, res) => {
             let object = global.refreshTokens[refreshToken];
 
             try {
-                jwt.verify(refresh_token.replace("eg1~", ""), global.JWT_SECRET);
-
                 if (refreshToken == -1) throw new Error("Refresh token invalid.");
+
+                jwt.verify(refresh_token.replace("eg1~", ""), global.JWT_SECRET);
             } catch {
                 if (refreshToken != -1) global.refreshTokens.splice(refreshToken, 1);
 
-                res.status(400).json(error.createError(
+                error.createError(
                     "errors.com.epicgames.account.auth_token.invalid_refresh_token",
                     `Sorry the refresh token '${refresh_token}' is invalid`, 
-                    [refresh_token], 18036, "invalid_grant")
+                    [refresh_token], 18036, "invalid_grant", 400, res
                 );
 
                 return;
@@ -103,10 +103,10 @@ app.post("/account/api/oauth/token", async (req, res) => {
         break;
 
         case "exchange_code":
-            if (!req.body.exchange_code) return res.status(400).json(error.createError(
+            if (!req.body.exchange_code) return error.createError(
                 "errors.com.epicgames.common.oauth.invalid_request",
                 "Exchange code is required.", 
-                [], 1013, "invalid_request")
+                [], 1013, "invalid_request", 400, res
             );
 
             const { exchange_code } = req.body;
@@ -114,10 +114,10 @@ app.post("/account/api/oauth/token", async (req, res) => {
             let index = global.exchangeCodes.findIndex(i => i.exchange_code == exchange_code);
             let exchange = global.exchangeCodes[index];
 
-            if (index == -1) return res.status(400).json(error.createError(
+            if (index == -1) return error.createError(
                 "errors.com.epicgames.account.oauth.exchange_code_not_found",
                 "Sorry the exchange code you supplied was not found. It is possible that it was no longer valid", 
-                [], 18057, "invalid_grant")
+                [], 18057, "invalid_grant", 400, res
             );
 
             global.exchangeCodes.splice(index, 1);
@@ -126,18 +126,18 @@ app.post("/account/api/oauth/token", async (req, res) => {
         break;
         
         default:
-            res.status(400).json(error.createError(
+            error.createError(
                 "errors.com.epicgames.common.oauth.unsupported_grant_type",
                 `Unsupported grant type: ${req.body.grant_type}`, 
-                [], 1016, "unsupported_grant_type")
+                [], 1016, "unsupported_grant_type", 400, res
             );
         return;
     }
 
-    if (req.user.banned) return res.status(400).json(error.createError(
+    if (req.user.banned) return error.createError(
         "errors.com.epicgames.account.account_not_active",
         "Sorry, your account is inactive and may not login.", 
-        [], -1, undefined)
+        [], -1, undefined, 400, res
     );
 
     let accessIndex = global.accessTokens.findIndex(i => i.accountId == req.user.accountId);

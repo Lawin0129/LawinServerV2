@@ -17,9 +17,8 @@ function createProfiles(accountId) {
     return profiles;
 }
 
-async function validateProfile(accountId, profileId) {
+async function validateProfile(profileId, profiles) {
     try {
-        let profiles = await Profile.findOne({ accountId: accountId }).lean();
         let profile = profiles.profiles[profileId];
 
         if (!profile || !profileId) throw new Error("Invalid profile/profileId");

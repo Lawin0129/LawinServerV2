@@ -42,10 +42,10 @@ app.get("/account/api/public/account", async (req, res) => {
 
 app.get("/account/api/public/account/displayName/:displayName", async (req, res) => {
     let user = await User.findOne({ username_lower: req.params.displayName.toLowerCase(), banned: false }).lean();
-    if (!user) return res.status(404).json(error.createError(
+    if (!user) return error.createError(
         "errors.com.epicgames.account.account_not_found",
         `Sorry, we couldn't find an account for ${req.params.displayName}`, 
-        [req.params.displayName], 18007, undefined)
+        [req.params.displayName], 18007, undefined, 404, res
     );
     
     res.json({
@@ -56,17 +56,17 @@ app.get("/account/api/public/account/displayName/:displayName", async (req, res)
 });
 
 app.get("/persona/api/public/account/lookup", async (req, res) => {
-    if (typeof req.query.q != "string") return res.status(400).json(error.createError(
+    if (typeof req.query.q != "string") return error.createError(
         "errors.com.epicgames.bad_request",
         "Required String parameter 'q' is invalid or not present", 
-        undefined, 1001, undefined)
+        undefined, 1001, undefined, 400, res
     );
 
     let user = await User.findOne({ username_lower: req.query.q.toLowerCase(), banned: false }).lean();
-    if (!user) return res.status(404).json(error.createError(
+    if (!user) return error.createError(
         "errors.com.epicgames.account.account_not_found",
         `Sorry, we couldn't find an account for ${req.query.q}`, 
-        [req.query.q], 18007, undefined)
+        [req.query.q], 18007, undefined, 404, res
     );
     
     res.json({
@@ -79,10 +79,10 @@ app.get("/persona/api/public/account/lookup", async (req, res) => {
 app.get("/api/v1/search/:accountId", async (req, res) => {
     let response = [];
 
-    if (typeof req.query.prefix != "string") return res.status(400).json(error.createError(
+    if (typeof req.query.prefix != "string") return error.createError(
         "errors.com.epicgames.bad_request",
         "Required String parameter 'prefix' is invalid or not present", 
-        undefined, 1001, undefined)
+        undefined, 1001, undefined, 400, res
     );
 
     let users = await User.find({ username_lower: new RegExp(`^${req.query.prefix.toLowerCase()}`), banned: false }).lean();

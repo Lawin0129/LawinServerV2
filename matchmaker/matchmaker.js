@@ -1,17 +1,20 @@
-const crypto = require("crypto");
+const functions = require("../structs/functions.js");
 
-module.exports = (ws) => {
+module.exports = async (ws) => {
     // create hashes
-    const ticketId = crypto.createHash('md5').update(`1${Date.now()}`).digest('hex');
-    const matchId = crypto.createHash('md5').update(`2${Date.now()}`).digest('hex');
-    const sessionId = crypto.createHash('md5').update(`3${Date.now()}`).digest('hex');
+    const ticketId = functions.MakeID().replace(/-/ig, "");
+    const matchId = functions.MakeID().replace(/-/ig, "");
+    const sessionId = functions.MakeID().replace(/-/ig, "");
 
-    // you can use setTimeout to send the websocket messages at certain times
-    setTimeout(Connecting, 200/* Milliseconds */);
-    setTimeout(Waiting, 1000); // 0.8 Seconds after Connecting
-    setTimeout(Queued, 2000); // 1 Second after Waiting
-    setTimeout(SessionAssignment, 6000); // 4 Seconds after Queued
-    setTimeout(Join, 8000); // 2 Seconds after SessionAssignment
+    Connecting();
+    await functions.sleep(800);
+    Waiting();
+    await functions.sleep(1000);
+    Queued();
+    await functions.sleep(4000);
+    SessionAssignment();
+    await functions.sleep(2000);
+    Join();
 
     function Connecting() {
         ws.send(JSON.stringify({

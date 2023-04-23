@@ -9,13 +9,14 @@ const functions = require("../structs/functions.js");
 const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 
 app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
+    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined)
+        [req.query.profileId], 12813, undefined, 403, res
     );
 
-    const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
     if (req.query.profileId == "athena") {
@@ -31,13 +32,13 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
 
     let missingFields = checkFields(["itemIds"], req.body);
 
-    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
+    if (missingFields.fields.length > 0) return error.createError(
         "errors.com.epicgames.validation.validation_failed",
         `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined, 400, res
     );
 
-    if (!Array.isArray(req.body.itemIds)) return res.status(400).json(ValidationError("itemIds", "an array"));
+    if (!Array.isArray(req.body.itemIds)) return ValidationError("itemIds", "an array", res);
 
     if (!profile.items) profile.items = {};
     
@@ -83,19 +84,20 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
+    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined)
+        [req.query.profileId], 12813, undefined, 403, res
     );
 
-    if (req.query.profileId != "athena") return res.status(400).json(error.createError(
+    if (req.query.profileId != "athena") return error.createError(
         "errors.com.epicgames.modules.profiles.invalid_command",
         `SetItemFavoriteStatusBatch is not valid on ${req.query.profileId} profile`, 
-        ["SetItemFavoriteStatusBatch",req.query.profileId], 12801, undefined)
+        ["SetItemFavoriteStatusBatch",req.query.profileId], 12801, undefined, 400, res
     );
 
-    const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
     if (req.query.profileId == "athena") {
@@ -111,14 +113,14 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
 
     let missingFields = checkFields(["itemIds","itemFavStatus"], req.body);
 
-    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
+    if (missingFields.fields.length > 0) return error.createError(
         "errors.com.epicgames.validation.validation_failed",
         `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined, 400, res
     );
 
-    if (!Array.isArray(req.body.itemIds)) return res.status(400).json(ValidationError("itemIds", "an array"));
-    if (!Array.isArray(req.body.itemFavStatus)) return res.status(400).json(ValidationError("itemFavStatus", "an array"));
+    if (!Array.isArray(req.body.itemIds)) return ValidationError("itemIds", "an array", res);
+    if (!Array.isArray(req.body.itemFavStatus)) return ValidationError("itemFavStatus", "an array", res);
 
     if (!profile.items) profile.items = {};
 
@@ -165,19 +167,20 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
+    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined)
+        [req.query.profileId], 12813, undefined, 403, res
     );
 
-    if (req.query.profileId != "athena") return res.status(400).json(error.createError(
+    if (req.query.profileId != "athena") return error.createError(
         "errors.com.epicgames.modules.profiles.invalid_command",
         `SetBattleRoyaleBanner is not valid on ${req.query.profileId} profile`, 
-        ["SetBattleRoyaleBanner",req.query.profileId], 12801, undefined)
+        ["SetBattleRoyaleBanner",req.query.profileId], 12801, undefined, 400, res
     );
 
-    const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
     const memory = functions.GetVersionInfo(req);
@@ -191,14 +194,14 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
 
     let missingFields = checkFields(["homebaseBannerIconId","homebaseBannerColorId"], req.body);
 
-    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
+    if (missingFields.fields.length > 0) return error.createError(
         "errors.com.epicgames.validation.validation_failed",
         `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined, 400, res
     );
 
-    if (typeof req.body.homebaseBannerIconId != "string") return res.status(400).json(ValidationError("homebaseBannerIconId", "a string"));
-    if (typeof req.body.homebaseBannerColorId != "string") return res.status(400).json(ValidationError("homebaseBannerColorId", "a string"));
+    if (typeof req.body.homebaseBannerIconId != "string") return ValidationError("homebaseBannerIconId", "a string", res);
+    if (typeof req.body.homebaseBannerColorId != "string") return ValidationError("homebaseBannerColorId", "a string", res);
 
     let bannerProfileId = memory.build < 3.5 ? "profile0" : "common_core";
 
@@ -214,16 +217,16 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
         if (HomebaseBannerIconID && HomebaseBannerColorID) break;
     }
 
-    if (!HomebaseBannerIconID) return res.status(400).json(error.createError(
+    if (!HomebaseBannerIconID) return error.createError(
         "errors.com.epicgames.fortnite.item_not_found",
         `Banner template 'HomebaseBannerIcon:${req.body.homebaseBannerIconId}' not found in profile`, 
-        [`HomebaseBannerIcon:${req.body.homebaseBannerIconId}`], 16006, undefined)
+        [`HomebaseBannerIcon:${req.body.homebaseBannerIconId}`], 16006, undefined, 400, res
     );
 
-    if (!HomebaseBannerColorID) return res.status(400).json(error.createError(
+    if (!HomebaseBannerColorID) return error.createError(
         "errors.com.epicgames.fortnite.item_not_found",
         `Banner template 'HomebaseBannerColor:${req.body.homebaseBannerColorId}' not found in profile`, 
-        [`HomebaseBannerColor:${req.body.homebaseBannerColorId}`], 16006, undefined)
+        [`HomebaseBannerColor:${req.body.homebaseBannerColorId}`], 16006, undefined, 400, res
     );
 
     if (!profile.items) profile.items = {};
@@ -277,19 +280,20 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
+    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined)
+        [req.query.profileId], 12813, undefined, 403, res
     );
 
-    if (req.query.profileId != "athena") return res.status(400).json(error.createError(
+    if (req.query.profileId != "athena") return error.createError(
         "errors.com.epicgames.modules.profiles.invalid_command",
         `EquipBattleRoyaleCustomization is not valid on ${req.query.profileId} profile`, 
-        ["EquipBattleRoyaleCustomization",req.query.profileId], 12801, undefined)
+        ["EquipBattleRoyaleCustomization",req.query.profileId], 12801, undefined, 400, res
     );
 
-    const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
     if (req.query.profileId == "athena") {
@@ -315,14 +319,14 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
 
     let missingFields = checkFields(["slotName"], req.body);
 
-    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
+    if (missingFields.fields.length > 0) return error.createError(
         "errors.com.epicgames.validation.validation_failed",
         `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined, 400, res
     );
 
-    if (typeof req.body.itemToSlot != "string") return res.status(400).json(ValidationError("itemToSlot", "a string"));
-    if (typeof req.body.slotName != "string") return res.status(400).json(ValidationError("slotName", "a string"));
+    if (typeof req.body.itemToSlot != "string") return ValidationError("itemToSlot", "a string", res);
+    if (typeof req.body.slotName != "string") return ValidationError("slotName", "a string", res);
 
     if (!profile.items) profile.items = {};
 
@@ -330,25 +334,25 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
         let item = req.body.itemToSlot.toLowerCase();
 
         if (!specialCosmetics.includes(item)) {
-            return res.status(400).json(error.createError(
+            return error.createError(
                 "errors.com.epicgames.fortnite.id_invalid",
                 `Item (id: "${req.body.itemToSlot}") not found`, 
-                [req.body.itemToSlot], 16027, undefined)
+                [req.body.itemToSlot], 16027, undefined, 400, res
             );
         } else {
-            if (!item.startsWith((`Athena${req.body.slotName}:`).toLowerCase())) return res.status(400).json(error.createError(
+            if (!item.startsWith((`Athena${req.body.slotName}:`).toLowerCase())) return error.createError(
                 "errors.com.epicgames.fortnite.id_invalid",
                 `Cannot slot item of type ${item.split(":")[0]} in slot of category ${req.body.slotName}`, 
-                [item.split(":")[0],req.body.slotName], 16027, undefined)
+                [item.split(":")[0],req.body.slotName], 16027, undefined, 400, res
             );
         }
     }
 
     if (profile.items[req.body.itemToSlot]) {
-        if (!profile.items[req.body.itemToSlot].templateId.startsWith(`Athena${req.body.slotName}:`)) return res.status(400).json(error.createError(
+        if (!profile.items[req.body.itemToSlot].templateId.startsWith(`Athena${req.body.slotName}:`)) return error.createError(
             "errors.com.epicgames.fortnite.id_invalid",
             `Cannot slot item of type ${profile.items[req.body.itemToSlot].templateId.split(":")[0]} in slot of category ${req.body.slotName}`, 
-            [profile.items[req.body.itemToSlot].templateId.split(":")[0],req.body.slotName], 16027, undefined)
+            [profile.items[req.body.itemToSlot].templateId.split(":")[0],req.body.slotName], 16027, undefined, 400, res
         );
 
         let Variants = req.body.variantUpdates;
@@ -470,19 +474,20 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
+    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined)
+        [req.query.profileId], 12813, undefined, 403, res
     );
 
-    if (req.query.profileId != "athena") return res.status(400).json(error.createError(
+    if (req.query.profileId != "athena") return error.createError(
         "errors.com.epicgames.modules.profiles.invalid_command",
         `SetCosmeticLockerBanner is not valid on ${req.query.profileId} profile`, 
-        ["SetCosmeticLockerBanner",req.query.profileId], 12801, undefined)
+        ["SetCosmeticLockerBanner",req.query.profileId], 12801, undefined, 400, res
     );
 
-    const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
     if (req.query.profileId == "athena") {
@@ -498,28 +503,28 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
 
     let missingFields = checkFields(["bannerIconTemplateName","bannerColorTemplateName","lockerItem"], req.body);
 
-    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
+    if (missingFields.fields.length > 0) return error.createError(
         "errors.com.epicgames.validation.validation_failed",
         `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined, 400, res
     );
 
-    if (typeof req.body.lockerItem != "string") return res.status(400).json(ValidationError("lockerItem", "a string"));
-    if (typeof req.body.bannerIconTemplateName != "string") return res.status(400).json(ValidationError("bannerIconTemplateName", "a string"));
-    if (typeof req.body.bannerColorTemplateName != "string") return res.status(400).json(ValidationError("bannerColorTemplateName", "a string"));
+    if (typeof req.body.lockerItem != "string") return ValidationError("lockerItem", "a string", res);
+    if (typeof req.body.bannerIconTemplateName != "string") return ValidationError("bannerIconTemplateName", "a string", res);
+    if (typeof req.body.bannerColorTemplateName != "string") return ValidationError("bannerColorTemplateName", "a string", res);
 
     if (!profile.items) profile.items = {};
 
-    if (!profile.items[req.body.lockerItem]) return res.status(400).json(error.createError(
+    if (!profile.items[req.body.lockerItem]) return error.createError(
         "errors.com.epicgames.fortnite.id_invalid",
         `Item (id: "${req.body.lockerItem}") not found`, 
-        [req.body.lockerItem], 16027, undefined)
+        [req.body.lockerItem], 16027, undefined, 400, res
     );
 
-    if (profile.items[req.body.lockerItem].templateId.toLowerCase() != "cosmeticlocker:cosmeticlocker_athena") return res.status(400).json(error.createError(
+    if (profile.items[req.body.lockerItem].templateId.toLowerCase() != "cosmeticlocker:cosmeticlocker_athena") return error.createError(
         "errors.com.epicgames.fortnite.id_invalid",
         `lockerItem id is not a cosmeticlocker`, 
-        ["lockerItem"], 16027, undefined)
+        ["lockerItem"], 16027, undefined, 400, res
     );
 
     let bannerProfileId = "common_core";
@@ -536,16 +541,16 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
         if (HomebaseBannerIconID && HomebaseBannerColorID) break;
     }
 
-    if (!HomebaseBannerIconID) return res.status(400).json(error.createError(
+    if (!HomebaseBannerIconID) return error.createError(
         "errors.com.epicgames.fortnite.item_not_found",
         `Banner template 'HomebaseBannerIcon:${req.body.bannerIconTemplateName}' not found in profile`, 
-        [`HomebaseBannerIcon:${req.body.bannerIconTemplateName}`], 16006, undefined)
+        [`HomebaseBannerIcon:${req.body.bannerIconTemplateName}`], 16006, undefined, 400, res
     );
 
-    if (!HomebaseBannerColorID) return res.status(400).json(error.createError(
+    if (!HomebaseBannerColorID) return error.createError(
         "errors.com.epicgames.fortnite.item_not_found",
         `Banner template 'HomebaseBannerColor:${req.body.bannerColorTemplateName}' not found in profile`, 
-        [`HomebaseBannerColor:${req.body.bannerColorTemplateName}`], 16006, undefined)
+        [`HomebaseBannerColor:${req.body.bannerColorTemplateName}`], 16006, undefined, 400, res
     );
 
     profile.items[req.body.lockerItem].attributes.banner_icon_template = req.body.bannerIconTemplateName;
@@ -597,19 +602,20 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
+    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined)
+        [req.query.profileId], 12813, undefined, 403, res
     );
 
-    if (req.query.profileId != "athena") return res.status(400).json(error.createError(
+    if (req.query.profileId != "athena") return error.createError(
         "errors.com.epicgames.modules.profiles.invalid_command",
         `SetCosmeticLockerSlot is not valid on ${req.query.profileId} profile`, 
-        ["SetCosmeticLockerSlot",req.query.profileId], 12801, undefined)
+        ["SetCosmeticLockerSlot",req.query.profileId], 12801, undefined, 400, res
     );
 
-    const profiles = await Profile.findOne({ accountId: req.user.accountId });
     let profile = profiles.profiles[req.query.profileId];
 
     if (req.query.profileId == "athena") {
@@ -635,15 +641,15 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
 
     let missingFields = checkFields(["category","lockerItem"], req.body);
 
-    if (missingFields.fields.length > 0) return res.status(400).json(error.createError(
+    if (missingFields.fields.length > 0) return error.createError(
         "errors.com.epicgames.validation.validation_failed",
         `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
-        [`[${missingFields.fields.join(", ")}]`], 1040, undefined)
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined, 400, res
     );
 
-    if (typeof req.body.itemToSlot != "string") return res.status(400).json(ValidationError("itemToSlot", "a string"));
-    if (typeof req.body.lockerItem != "string") return res.status(400).json(ValidationError("lockerItem", "a string"));
-    if (typeof req.body.category != "string") return res.status(400).json(ValidationError("category", "a string"));
+    if (typeof req.body.itemToSlot != "string") return ValidationError("itemToSlot", "a string", res);
+    if (typeof req.body.lockerItem != "string") return ValidationError("lockerItem", "a string", res);
+    if (typeof req.body.category != "string") return ValidationError("category", "a string", res);
 
     if (!profile.items) profile.items = {};
 
@@ -655,41 +661,41 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
         }
     }
 
-    if (!profile.items[req.body.lockerItem]) return res.status(400).json(error.createError(
+    if (!profile.items[req.body.lockerItem]) return error.createError(
         "errors.com.epicgames.fortnite.id_invalid",
         `Item (id: "${req.body.lockerItem}") not found`, 
-        [req.body.lockerItem], 16027, undefined)
+        [req.body.lockerItem], 16027, undefined, 400, res
     );
 
-    if (profile.items[req.body.lockerItem].templateId.toLowerCase() != "cosmeticlocker:cosmeticlocker_athena") return res.status(400).json(error.createError(
+    if (profile.items[req.body.lockerItem].templateId.toLowerCase() != "cosmeticlocker:cosmeticlocker_athena") return error.createError(
         "errors.com.epicgames.fortnite.id_invalid",
         `lockerItem id is not a cosmeticlocker`, 
-        ["lockerItem"], 16027, undefined)
+        ["lockerItem"], 16027, undefined, 400, res
     );
 
     if (!profile.items[itemToSlotID] && req.body.itemToSlot) {
         let item = req.body.itemToSlot.toLowerCase();
 
         if (!specialCosmetics.includes(item)) {
-            return res.status(400).json(error.createError(
+            return error.createError(
                 "errors.com.epicgames.fortnite.id_invalid",
                 `Item (id: "${req.body.itemToSlot}") not found`, 
-                [req.body.itemToSlot], 16027, undefined)
+                [req.body.itemToSlot], 16027, undefined, 400, res
             );
         } else {
-            if (!item.startsWith((`Athena${req.body.category}:`).toLowerCase())) return res.status(400).json(error.createError(
+            if (!item.startsWith((`Athena${req.body.category}:`).toLowerCase())) return error.createError(
                 "errors.com.epicgames.fortnite.id_invalid",
                 `Cannot slot item of type ${item.split(":")[0]} in slot of category ${req.body.category}`, 
-                [item.split(":")[0],req.body.category], 16027, undefined)
+                [item.split(":")[0],req.body.category], 16027, undefined, 400, res
             );
         }
     }
 
     if (profile.items[itemToSlotID]) {
-        if (!profile.items[itemToSlotID].templateId.startsWith(`Athena${req.body.category}:`)) return res.status(400).json(error.createError(
+        if (!profile.items[itemToSlotID].templateId.startsWith(`Athena${req.body.category}:`)) return error.createError(
             "errors.com.epicgames.fortnite.id_invalid",
             `Cannot slot item of type ${profile.items[itemToSlotID].templateId.split(":")[0]} in slot of category ${req.body.category}`, 
-            [profile.items[itemToSlotID].templateId.split(":")[0],req.body.category], 16027, undefined)
+            [profile.items[itemToSlotID].templateId.split(":")[0],req.body.category], 16027, undefined, 400, res
         );
 
         let Variants = req.body.variantUpdates;
@@ -803,13 +809,14 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async (req, res) => {
-    if (!await profileManager.validateProfile(req.user.accountId, req.query.profileId)) return res.status(403).json(error.createError(
+    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
-        [req.query.profileId], 12813, undefined)
+        [req.query.profileId], 12813, undefined, 403, res
     );
-
-    const profiles = await Profile.findOne({ accountId: req.user.accountId }).lean();
+    
     let profile = profiles.profiles[req.query.profileId];
 
     if (req.query.profileId == "athena") {
@@ -833,10 +840,10 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
         case "PurchaseCatalogEntry": break;
 
         default:
-            res.status(404).json(error.createError(
+            error.createError(
                 "errors.com.epicgames.fortnite.operation_not_found",
                 `Operation ${req.params.operation} not valid`, 
-                [req.params.operation], 16035, undefined)
+                [req.params.operation], 16035, undefined, 404, res
             );
         return;
     }
@@ -869,11 +876,11 @@ function checkFields(fields, body) {
     return missingFields;
 }
 
-function ValidationError(field, type) {
+function ValidationError(field, type, res) {
     return error.createError(
         "errors.com.epicgames.validation.validation_failed",
         `Validation Failed. '${field}' is not ${type}.`,
-        [field], 1040, undefined
+        [field], 1040, undefined, 400, res
     );
 }
 

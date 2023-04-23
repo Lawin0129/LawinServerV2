@@ -4,13 +4,13 @@ const User = require("../model/user.js");
 const error = require("../structs/error.js");
 
 async function verifyToken(req, res, next) {
-    let authErr = error.createError(
+    let authErr = () => error.createError(
         "errors.com.epicgames.common.authorization.authorization_failed",
         `Authorization failed for ${req.originalUrl}`, 
-        [req.originalUrl], 1032, undefined
+        [req.originalUrl], 1032, undefined, 401, res
     );
 
-    if (!req.headers["authorization"] || !req.headers["authorization"].startsWith("bearer eg1~")) return res.status(401).json(authErr);
+    if (!req.headers["authorization"] || !req.headers["authorization"].startsWith("bearer eg1~")) return authErr();
 
     const token = req.headers["authorization"].replace("bearer eg1~", "");
 
@@ -21,10 +21,10 @@ async function verifyToken(req, res, next) {
 
         req.user = await User.findOne({ accountId: decodedToken.sub }).lean();
 
-        if (req.user.banned) return res.status(400).json(error.createError(
+        if (req.user.banned) return error.createError(
             "errors.com.epicgames.account.account_not_active",
             "Sorry, your account is inactive and may not login.", 
-            [], -1, undefined)
+            [], -1, undefined, 400, res
         );
 
         next();
@@ -32,18 +32,18 @@ async function verifyToken(req, res, next) {
         let accessIndex = global.accessTokens.findIndex(i => i.token == `eg1~${token}`);
         if (accessIndex != -1) global.accessTokens.splice(accessIndex, 1);
         
-        return res.status(401).json(authErr);
+        return authErr();
     }
 }
 
 async function verifyClient(req, res, next) {
-    let authErr = error.createError(
+    let authErr = () => error.createError(
         "errors.com.epicgames.common.authorization.authorization_failed",
         `Authorization failed for ${req.originalUrl}`, 
-        [req.originalUrl], 1032, undefined
+        [req.originalUrl], 1032, undefined, 401, res
     );
 
-    if (!req.headers["authorization"] || !req.headers["authorization"].startsWith("bearer eg1~")) return res.status(401).json(authErr);
+    if (!req.headers["authorization"] || !req.headers["authorization"].startsWith("bearer eg1~")) return authErr();
 
     const token = req.headers["authorization"].replace("bearer eg1~", "");
 
@@ -57,10 +57,10 @@ async function verifyClient(req, res, next) {
         if (findAccess) {
             req.user = await User.findOne({ accountId: decodedToken.sub }).lean();
 
-            if (req.user.banned) return res.status(400).json(error.createError(
+            if (req.user.banned) return error.createError(
                 "errors.com.epicgames.account.account_not_active",
                 "Sorry, your account is inactive and may not login.", 
-                [], -1, undefined)
+                [], -1, undefined, 400, res
             );
         }
 
@@ -72,7 +72,7 @@ async function verifyClient(req, res, next) {
         let clientIndex = global.clientTokens.findIndex(i => i.token == `eg1~${token}`);
         if (clientIndex != -1) global.clientTokens.splice(clientIndex, 1);
         
-        return res.status(401).json(authErr);
+        return authErr();
     }
 }
 
