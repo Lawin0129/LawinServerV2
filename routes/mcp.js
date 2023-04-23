@@ -11,7 +11,7 @@ const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, async (req, res) => {
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
 
-    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
         [req.query.profileId], 12813, undefined, 403, res
@@ -86,7 +86,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
 app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", verifyToken, async (req, res) => {
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
 
-    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
         [req.query.profileId], 12813, undefined, 403, res
@@ -169,7 +169,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
 app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyToken, async (req, res) => {
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
 
-    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
         [req.query.profileId], 12813, undefined, 403, res
@@ -282,7 +282,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
 app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization", verifyToken, async (req, res) => {
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
 
-    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
         [req.query.profileId], 12813, undefined, 403, res
@@ -476,7 +476,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
 app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verifyToken, async (req, res) => {
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
 
-    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
         [req.query.profileId], 12813, undefined, 403, res
@@ -604,7 +604,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
 app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyToken, async (req, res) => {
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
 
-    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
         [req.query.profileId], 12813, undefined, 403, res
@@ -809,9 +809,9 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async (req, res) => {
-    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+    const profiles = await Profile.findOne({ accountId: req.user.accountId }).lean();
 
-    if (!await profileManager.validateProfile(req.query.profileId, profiles.lean())) return error.createError(
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
         "errors.com.epicgames.modules.profiles.operation_forbidden",
         `Unable to find template configuration for profile ${req.query.profileId}`, 
         [req.query.profileId], 12813, undefined, 403, res
