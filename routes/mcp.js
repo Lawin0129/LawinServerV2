@@ -866,6 +866,46 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
     });
 });
 
+app.post("/fortnite/api/game/v2/profile/:accountId/dedicated_server/:operation", async (req, res) => {
+    const profiles = await Profile.findOne({ accountId: req.params.accountId }).lean();
+    if (!profiles) return res.status(404).json({});
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
+        "errors.com.epicgames.modules.profiles.operation_forbidden",
+        `Unable to find template configuration for profile ${req.query.profileId}`, 
+        [req.query.profileId], 12813, undefined, 403, res
+    );
+    
+    let profile = profiles.profiles[req.query.profileId];
+
+    if (req.query.profileId != "athena") return error.createError(
+        "errors.com.epicgames.modules.profiles.invalid_command",
+        `dedicated_server is not valid on ${req.query.profileId} profile`, 
+        ["dedicated_server",req.query.profileId], 12801, undefined, 400, res
+    );
+
+    let ApplyProfileChanges = [];
+    let BaseRevision = profile.rvn || 0;
+    let QueryRevision = req.query.rvn || -1;
+
+    if (QueryRevision != BaseRevision) {
+        ApplyProfileChanges = [{
+            "changeType": "fullProfileUpdate",
+            "profile": profile
+        }];
+    }
+
+    res.json({
+        profileRevision: profile.rvn || 0,
+        profileId: req.query.profileId,
+        profileChangesBaseRevision: BaseRevision,
+        profileChanges: ApplyProfileChanges,
+        profileCommandRevision: profile.commandRevision || 0,
+        serverTime: new Date().toISOString(),
+        responseVersion: 1
+    });
+});
+
 function checkFields(fields, body) {
     let missingFields = { fields: [] };
 
