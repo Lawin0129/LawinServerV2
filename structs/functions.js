@@ -83,7 +83,7 @@ function GetVersionInfo(req) {
 function getContentPages(req) {
     const memory = GetVersionInfo(req);
 
-    const contentpages = JSON.parse(JSON.stringify(require("../responses/contentpages.json")));
+    const contentpages = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "responses", "contentpages.json")).toString());
 
     let Language = "en";
 
@@ -105,16 +105,16 @@ function getContentPages(req) {
             contentpages.subgameselectdata[mode].message.title = contentpages.subgameselectdata[mode].message.title[Language]
             contentpages.subgameselectdata[mode].message.body = contentpages.subgameselectdata[mode].message.body[Language]
         })
-    } catch (err) {}
+    } catch {}
 
     try {
         if (memory.build < 5.30) { 
             news.forEach(mode => {
                 contentpages[mode].news.messages[0].image = "https://cdn.discordapp.com/attachments/927739901540188200/930879507496308736/discord.png";
                 contentpages[mode].news.messages[1].image = "https://cdn.discordapp.com/attachments/927739901540188200/930879519882088508/lawin.png";
-            })
+            });
         }
-    } catch (err) {}
+    } catch {}
 
     try {
         contentpages.dynamicbackgrounds.backgrounds.backgrounds[0].stage = `season${memory.season}`;
@@ -148,7 +148,7 @@ function getContentPages(req) {
         if (memory.season == 21) {
             contentpages.dynamicbackgrounds.backgrounds.backgrounds[0].backgroundimage = "https://cdn2.unrealengine.com/s21-lobby-background-2048x1024-2e7112b25dc3.jpg"
         }
-    } catch (err) {}
+    } catch {}
 
     return contentpages;
 }
@@ -158,76 +158,38 @@ function getItemShop() {
     const CatalogConfig = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "Config", "catalog_config.json").toString()));
 
     try {
-        for (var value in CatalogConfig) {
-            if (Array.isArray(CatalogConfig[value].itemGrants)) {
-                if (CatalogConfig[value].itemGrants.length != 0) {
-                    const CatalogEntry = {"devName":"","offerId":"","fulfillmentIds":[],"dailyLimit":-1,"weeklyLimit":-1,"monthlyLimit":-1,"categories":[],"prices":[{"currencyType":"MtxCurrency","currencySubType":"","regularPrice":0,"finalPrice":0,"saleExpiration":"9999-12-02T01:12:00Z","basePrice":0}],"matchFilter":"","filterWeight":0,"appStoreId":[],"requirements":[],"offerType":"StaticPrice","giftInfo":{"bIsEnabled":false,"forcedGiftBoxTemplateId":"","purchaseRequirements":[],"giftRecordIds":[]},"refundable":true,"metaInfo":[],"displayAssetPath":"","itemGrants":[],"sortPriority":0,"catalogGroupPriority":0};
+        for (let value in CatalogConfig) {
+            if (!Array.isArray(CatalogConfig[value].itemGrants)) continue;
+            if (CatalogConfig[value].itemGrants.length == 0) continue;
+            
+            const CatalogEntry = {"devName":"","offerId":"","fulfillmentIds":[],"dailyLimit":-1,"weeklyLimit":-1,"monthlyLimit":-1,"categories":[],"prices":[{"currencyType":"MtxCurrency","currencySubType":"","regularPrice":0,"finalPrice":0,"saleExpiration":"9999-12-02T01:12:00Z","basePrice":0}],"matchFilter":"","filterWeight":0,"appStoreId":[],"requirements":[],"offerType":"StaticPrice","giftInfo":{"bIsEnabled":false,"forcedGiftBoxTemplateId":"","purchaseRequirements":[],"giftRecordIds":[]},"refundable":true,"metaInfo":[],"displayAssetPath":"","itemGrants":[],"sortPriority":0,"catalogGroupPriority":0};
 
-                    if (value.toLowerCase().startsWith("daily")) {
-                        let store = catalog.storefronts.find(p => p.name == "BRDailyStorefront");
-                        
-                        if (store) {
-                            let i = catalog.storefronts.findIndex(p => p.name == "BRDailyStorefront");
+            let i = catalog.storefronts.findIndex(p => p.name == value.toLowerCase().startsWith("daily") ? "BRDailyStorefront" : "BRWeeklyStorefront");
+            if (i == -1) continue;
 
-                            CatalogEntry.requirements = [];
-                            CatalogEntry.itemGrants = [];
+            for (let x in CatalogConfig[value].itemGrants) {
+                if (typeof CatalogConfig[value].itemGrants[x] != "string") continue;
+                if (CatalogConfig[value].itemGrants[x].length == 0) continue;
+                
+                CatalogEntry.devName = CatalogConfig[value].itemGrants[0];
+                CatalogEntry.offerId = CatalogConfig[value].itemGrants[0];
 
-                            for (var x in CatalogConfig[value].itemGrants) {
-                                if (typeof CatalogConfig[value].itemGrants[x] == "string") {
-                                    if (CatalogConfig[value].itemGrants[x].length != 0) {
-                                        CatalogEntry.devName = CatalogConfig[value].itemGrants[0]
-                                        CatalogEntry.offerId = CatalogConfig[value].itemGrants[0]
-
-                                        CatalogEntry.requirements.push({ "requirementType": "DenyOnItemOwnership", "requiredId": CatalogConfig[value].itemGrants[x], "minQuantity": 1 })
-                                        CatalogEntry.itemGrants.push({ "templateId": CatalogConfig[value].itemGrants[x], "quantity": 1 });
-                                    }
-                                }
-                            }
-
-                            CatalogEntry.prices[0].basePrice = CatalogConfig[value].price
-                            CatalogEntry.prices[0].regularPrice = CatalogConfig[value].price
-                            CatalogEntry.prices[0].finalPrice = CatalogConfig[value].price
-
-                            if (CatalogEntry.itemGrants.length != 0) {
-                                catalog.storefronts[i].catalogEntries.push(CatalogEntry);
-                            }
-                        }
-                    }
-
-                    if (value.toLowerCase().startsWith("featured")) {
-                        let store = catalog.storefronts.find(p => p.name == "BRWeeklyStorefront");
-                        
-                        if (store) {
-                            let i = catalog.storefronts.findIndex(p => p.name == "BRWeeklyStorefront");
-
-                            CatalogEntry.requirements = [];
-                            CatalogEntry.itemGrants = [];
-
-                            for (var x in CatalogConfig[value].itemGrants) {
-                                if (typeof CatalogConfig[value].itemGrants[x] == "string") {
-                                    if (CatalogConfig[value].itemGrants[x].length != 0) {
-                                        CatalogEntry.devName = CatalogConfig[value].itemGrants[0]
-                                        CatalogEntry.offerId = CatalogConfig[value].itemGrants[0]
-
-                                        CatalogEntry.requirements.push({ "requirementType": "DenyOnItemOwnership", "requiredId": CatalogConfig[value].itemGrants[x], "minQuantity": 1 })
-                                        CatalogEntry.itemGrants.push({ "templateId": CatalogConfig[value].itemGrants[x], "quantity": 1 });
-                                    }
-                                }
-                            }
-
-                            CatalogEntry.prices[0].basePrice = CatalogConfig[value].price
-                            CatalogEntry.prices[0].regularPrice = CatalogConfig[value].price
-                            CatalogEntry.prices[0].finalPrice = CatalogConfig[value].price
-
-                            if (CatalogEntry.itemGrants.length != 0) {
-                                catalog.storefronts[i].catalogEntries.push(CatalogEntry);
-                            }
-                        }
-                    }
-                }
+                CatalogEntry.requirements.push({ "requirementType": "DenyOnItemOwnership", "requiredId": CatalogConfig[value].itemGrants[x], "minQuantity": 1 });
+                CatalogEntry.itemGrants.push({ "templateId": CatalogConfig[value].itemGrants[x], "quantity": 1 });
             }
+
+            CatalogEntry.prices = [{
+                "currencyType": "MtxCurrency",
+                "currencySubType": "",
+                "regularPrice": CatalogConfig[value].price,
+                "finalPrice": CatalogConfig[value].price,
+                "saleExpiration": "9999-12-02T01:12:00Z",
+                "basePrice": CatalogConfig[value].price
+            }];
+
+            if (CatalogEntry.itemGrants.length > 0) catalog.storefronts[i].catalogEntries.push(CatalogEntry);
         }
-    } catch (err) {}
+    } catch {}
 
     return catalog;
 }

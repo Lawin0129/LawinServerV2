@@ -93,7 +93,7 @@ app.get("/fortnite/api/cloudstorage/user/:accountId", verifyToken, (req, res) =>
 });
 
 app.put("/fortnite/api/cloudstorage/user/*/:file", verifyToken, getRawBody, (req, res) => {
-    if (Buffer.byteLength(req.rawBody) >= 500000) return res.status(403).json({ "error": "File size must be less than 500kb." });
+    if (Buffer.byteLength(req.rawBody) >= 400000) return res.status(403).json({ "error": "File size must be less than 400kb." });
 
     let clientSettingsPath = path.join(__dirname, "..", "ClientSettings", req.user.accountId);
     if (!fs.existsSync(clientSettingsPath)) fs.mkdirSync(clientSettingsPath);
@@ -111,7 +111,7 @@ app.put("/fortnite/api/cloudstorage/user/*/:file", verifyToken, getRawBody, (req
 
 function getRawBody(req, res, next) {
     if (req.headers["content-length"]) {
-        if (Number(req.headers["content-length"]) >= 500000) return res.status(403).json({ "error": "File size must be less than 500kb." });
+        if (Number(req.headers["content-length"]) >= 400000) return res.status(403).json({ "error": "File size must be less than 400kb." });
     }
 
     // Get raw body in encoding latin1 for ClientSettings

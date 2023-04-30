@@ -46,8 +46,7 @@ app.post("/account/api/oauth/token", async (req, res) => {
                 internal_client: true,
                 client_service: "fortnite"
             });
-            return;
-        break;
+        return;
 
         case "password":
             if (!req.body.username || !req.body.password) return error.createError(

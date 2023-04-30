@@ -134,6 +134,8 @@ wss.on('connection', async (ws) => {
                         if (resource || !accountId) return;
                         if (!msg.root.children.find(i => i.name == "bind")) return;
 
+                        if (global.Clients.find(i => i.accountId == accountId)) return Error(ws);
+
                         let findResource = msg.root.children.find(i => i.name == "bind").children.find(i => i.name == "resource");
 
                         if (!findResource) return;
@@ -202,8 +204,7 @@ wss.on('connection', async (ws) => {
                         .attribute("xmlns", "jabber:client")
                         .attribute("type", "chat")
                         .element("body", body).up().toString());
-                        return;
-                    break;
+                    return;
 
                     case "groupchat":
                         if (!msg.root.attributes.to) return;
@@ -227,8 +228,7 @@ wss.on('connection', async (ws) => {
                             .attribute("type", "groupchat")
                             .element("body", body).up().toString());
                         });
-                        return;
-                    break;
+                    return;
                 }
 
                 if (isJSON(body)) {
@@ -246,15 +246,17 @@ wss.on('connection', async (ws) => {
             case "presence":
                 if (!clientExists) return Error(ws);
 
-                if (msg.root.attributes.type == "unavailable") {
-                    if (!msg.root.attributes.to) return;
+                switch (msg.root.attributes.type) {
+                    case "unavailable":
+                        if (!msg.root.attributes.to) return;
 
-                    if (msg.root.attributes.to.endsWith(`@muc.${domain}`) || msg.root.attributes.to.split("/")[0].endsWith(`@muc.${domain}`)) {
-                        if (msg.root.attributes.to.toLowerCase().startsWith("party-")) {
+                        if (msg.root.attributes.to.endsWith(`@muc.${domain}`) || msg.root.attributes.to.split("/")[0].endsWith(`@muc.${domain}`)) {
+                            if (!msg.root.attributes.to.toLowerCase().startsWith("party-")) return;
+                            
                             let roomName = msg.root.attributes.to.split("@")[0];
-
+                            
                             if (!global.MUCs[roomName]) return;
-
+                            
                             let memberIndex = global.MUCs[roomName].members.findIndex(i => i.accountId == accountId);
                             if (memberIndex != -1) {
                                 global.MUCs[roomName].members.splice(memberIndex, 1);
@@ -276,69 +278,67 @@ wss.on('connection', async (ws) => {
                             .element("status").attribute("code", "170").up().up().toString());
                             return;
                         }
-                    }
-                }
+                    break;
 
-                if (msg.root.children.find(i => i.name == "x")) {
-                    if (msg.root.children.find(i => i.name == "x").children.find(i => i.name == "history")) {
-                        if (!msg.root.attributes.to) return;
-
-                        let roomName = msg.root.attributes.to.split("@")[0];
-
-                        if (!global.MUCs[roomName]) global.MUCs[roomName] = { members: [] };
-
-                        if (global.MUCs[roomName].members.find(i => i.accountId == accountId)) return;
-
-                        global.MUCs[roomName].members.push({ accountId: accountId });
-
-                        joinedMUCs.push(roomName);
-
-                        ws.send(XMLBuilder.create("presence")
-                        .attribute("to", jid)
-                        .attribute("from", getMUCmember(roomName, displayName, accountId, resource))
-                        .attribute("xmlns", "jabber:client")
-                        .element("x").attribute("xmlns", "http://jabber.org/protocol/muc#user")
-                        .element("item")
-                        .attribute("nick", getMUCmember(roomName, displayName, accountId, resource).replace(`${roomName}@muc.${domain}/`, ""))
-                        .attribute("jid", jid)
-                        .attribute("role", "participant")
-                        .attribute("affiliation", "none").up()
-                        .element("status").attribute("code", "110").up()
-                        .element("status").attribute("code", "100").up()
-                        .element("status").attribute("code", "170").up()
-                        .element("status").attribute("code", "201").up().up().toString());
-
-                        global.MUCs[roomName].members.forEach(member => {
-                            let ClientData = global.Clients.find(i => i.accountId == member.accountId);
-                            if (!ClientData) return;
-
+                    default:
+                        if (msg.root.children.find(i => i.name == "muc:x") || msg.root.children.find(i => i.name == "x")) {
+                            if (!msg.root.attributes.to) return;
+                            
+                            let roomName = msg.root.attributes.to.split("@")[0];
+    
+                            if (!global.MUCs[roomName]) global.MUCs[roomName] = { members: [] };
+    
+                            if (global.MUCs[roomName].members.find(i => i.accountId == accountId)) return;
+    
+                            global.MUCs[roomName].members.push({ accountId: accountId });
+    
+                            joinedMUCs.push(roomName);
+    
                             ws.send(XMLBuilder.create("presence")
-                            .attribute("from", getMUCmember(roomName, ClientData.displayName, ClientData.accountId, ClientData.resource))
                             .attribute("to", jid)
-                            .attribute("xmlns", "jabber:client")
-                            .element("x")
-                            .attribute("xmlns", "http://jabber.org/protocol/muc#user")
-                            .element("item")
-                            .attribute("nick", getMUCmember(roomName, ClientData.displayName, ClientData.accountId, ClientData.resource).replace(`${roomName}@muc.${domain}/`, ""))
-                            .attribute("jid", ClientData.jid)
-                            .attribute("role", "participant")
-                            .attribute("affiliation", "none").up().up().toString());
-
-                            if (accountId == ClientData.accountId) return;
-
-                            ClientData.client.send(XMLBuilder.create("presence")
                             .attribute("from", getMUCmember(roomName, displayName, accountId, resource))
-                            .attribute("to", ClientData.jid)
                             .attribute("xmlns", "jabber:client")
-                            .element("x")
-                            .attribute("xmlns", "http://jabber.org/protocol/muc#user")
+                            .element("x").attribute("xmlns", "http://jabber.org/protocol/muc#user")
                             .element("item")
                             .attribute("nick", getMUCmember(roomName, displayName, accountId, resource).replace(`${roomName}@muc.${domain}/`, ""))
                             .attribute("jid", jid)
                             .attribute("role", "participant")
-                            .attribute("affiliation", "none").up().up().toString());
-                        });
-
+                            .attribute("affiliation", "none").up()
+                            .element("status").attribute("code", "110").up()
+                            .element("status").attribute("code", "100").up()
+                            .element("status").attribute("code", "170").up()
+                            .element("status").attribute("code", "201").up().up().toString());
+    
+                            global.MUCs[roomName].members.forEach(member => {
+                                let ClientData = global.Clients.find(i => i.accountId == member.accountId);
+                                if (!ClientData) return;
+    
+                                ws.send(XMLBuilder.create("presence")
+                                .attribute("from", getMUCmember(roomName, ClientData.displayName, ClientData.accountId, ClientData.resource))
+                                .attribute("to", jid)
+                                .attribute("xmlns", "jabber:client")
+                                .element("x")
+                                .attribute("xmlns", "http://jabber.org/protocol/muc#user")
+                                .element("item")
+                                .attribute("nick", getMUCmember(roomName, ClientData.displayName, ClientData.accountId, ClientData.resource).replace(`${roomName}@muc.${domain}/`, ""))
+                                .attribute("jid", ClientData.jid)
+                                .attribute("role", "participant")
+                                .attribute("affiliation", "none").up().up().toString());
+    
+                                if (accountId == ClientData.accountId) return;
+    
+                                ClientData.client.send(XMLBuilder.create("presence")
+                                .attribute("from", getMUCmember(roomName, displayName, accountId, resource))
+                                .attribute("to", ClientData.jid)
+                                .attribute("xmlns", "jabber:client")
+                                .element("x")
+                                .attribute("xmlns", "http://jabber.org/protocol/muc#user")
+                                .element("item")
+                                .attribute("nick", getMUCmember(roomName, displayName, accountId, resource).replace(`${roomName}@muc.${domain}/`, ""))
+                                .attribute("jid", jid)
+                                .attribute("role", "participant")
+                                .attribute("affiliation", "none").up().up().toString());
+                            });
                         return;
                     }
                 }
@@ -413,14 +413,14 @@ function RemoveClient(ws, joinedMUCs) {
             case (isObject(ClientStatus.Properties)): {
                 for (let key in ClientStatus.Properties) {
                     if (key.toLowerCase().startsWith("party.joininfo")) {
-                        if (ClientStatus.Properties[key] && isObject(ClientStatus.Properties[key])) partyId = ClientStatus.Properties[key].partyId;
+                        if (isObject(ClientStatus.Properties[key])) partyId = ClientStatus.Properties[key].partyId;
                     }
                 }
             }
         }
     } catch {}
 
-    if (partyId) {
+    if (partyId && typeof partyId == "string") {
         global.Clients.forEach(ClientData => {
             if (client.accountId == ClientData.accountId) return;
 
