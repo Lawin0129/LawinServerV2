@@ -15,6 +15,9 @@
     + Accepting friend requests.
     + Removing friends.
     + Blocking friends.
+* Item Shop:
+    + Customizable Item Shop.
+    + Purchasing items from the Item Shop.
 ### XMPP Features
 - Parties (builds 3.5 to 14.50).
 - Chat (whispering, global chat, party chat).
@@ -29,6 +32,7 @@
 - `/change-username {newUsername}` - You can change your username using this command.
 - `/change-password {newPassword}` - You can change your password using this command.
 - `/sign-out-of-all-sessions` - Signs you out if you have an active session.
+- `/clear-items-for-shop` - Clears anything in your profile that is from the item shop.
 ### Moderation Commands:
 - You can only use the moderation commands if you are a moderator.
 - `/ban {targetUsername}` - Ban a user from the backend by their username.

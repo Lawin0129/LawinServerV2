@@ -162,20 +162,20 @@ function getItemShop() {
             if (!Array.isArray(CatalogConfig[value].itemGrants)) continue;
             if (CatalogConfig[value].itemGrants.length == 0) continue;
             
-            const CatalogEntry = {"devName":"","offerId":"","fulfillmentIds":[],"dailyLimit":-1,"weeklyLimit":-1,"monthlyLimit":-1,"categories":[],"prices":[{"currencyType":"MtxCurrency","currencySubType":"","regularPrice":0,"finalPrice":0,"saleExpiration":"9999-12-02T01:12:00Z","basePrice":0}],"matchFilter":"","filterWeight":0,"appStoreId":[],"requirements":[],"offerType":"StaticPrice","giftInfo":{"bIsEnabled":false,"forcedGiftBoxTemplateId":"","purchaseRequirements":[],"giftRecordIds":[]},"refundable":true,"metaInfo":[],"displayAssetPath":"","itemGrants":[],"sortPriority":0,"catalogGroupPriority":0};
+            const CatalogEntry = {"devName":"","offerId":"","fulfillmentIds":[],"dailyLimit":-1,"weeklyLimit":-1,"monthlyLimit":-1,"categories":[],"prices":[{"currencyType":"MtxCurrency","currencySubType":"","regularPrice":0,"finalPrice":0,"saleExpiration":"9999-12-02T01:12:00Z","basePrice":0}],"matchFilter":"","filterWeight":0,"appStoreId":[],"requirements":[],"offerType":"StaticPrice","giftInfo":{"bIsEnabled":false,"forcedGiftBoxTemplateId":"","purchaseRequirements":[],"giftRecordIds":[]},"refundable":false,"metaInfo":[],"displayAssetPath":"","itemGrants":[],"sortPriority":0,"catalogGroupPriority":0};
 
-            let i = catalog.storefronts.findIndex(p => p.name == value.toLowerCase().startsWith("daily") ? "BRDailyStorefront" : "BRWeeklyStorefront");
+            let i = catalog.storefronts.findIndex(p => p.name == (value.toLowerCase().startsWith("daily") ? "BRDailyStorefront" : "BRWeeklyStorefront"));
             if (i == -1) continue;
 
-            for (let x in CatalogConfig[value].itemGrants) {
-                if (typeof CatalogConfig[value].itemGrants[x] != "string") continue;
-                if (CatalogConfig[value].itemGrants[x].length == 0) continue;
+            for (let itemGrant of CatalogConfig[value].itemGrants) {
+                if (typeof itemGrant != "string") continue;
+                if (itemGrant.length == 0) continue;
                 
                 CatalogEntry.devName = CatalogConfig[value].itemGrants[0];
                 CatalogEntry.offerId = CatalogConfig[value].itemGrants[0];
 
-                CatalogEntry.requirements.push({ "requirementType": "DenyOnItemOwnership", "requiredId": CatalogConfig[value].itemGrants[x], "minQuantity": 1 });
-                CatalogEntry.itemGrants.push({ "templateId": CatalogConfig[value].itemGrants[x], "quantity": 1 });
+                CatalogEntry.requirements.push({ "requirementType": "DenyOnItemOwnership", "requiredId": itemGrant, "minQuantity": 1 });
+                CatalogEntry.itemGrants.push({ "templateId": itemGrant, "quantity": 1 });
             }
 
             CatalogEntry.prices = [{
@@ -192,6 +192,19 @@ function getItemShop() {
     } catch {}
 
     return catalog;
+}
+
+function getOfferID(offerId) {
+    const catalog = getItemShop();
+
+    for (let storefront of catalog.storefronts) {
+        let findOfferId = storefront.catalogEntries.find(i => i.offerId == offerId);
+
+        if (findOfferId) return {
+            name: storefront.name,
+            offerId: findOfferId
+        };
+    }
 }
 
 function MakeID() {
@@ -293,6 +306,7 @@ module.exports = {
     GetVersionInfo,
     getContentPages,
     getItemShop,
+    getOfferID,
     MakeID,
     sendXmppMessageToAll,
     sendXmppMessageToId,

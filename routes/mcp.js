@@ -8,6 +8,188 @@ const functions = require("../structs/functions.js");
 
 const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 
+app.post("/fortnite/api/game/v2/profile/*/client/PurchaseCatalogEntry", verifyToken, async (req, res) => {
+    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
+        "errors.com.epicgames.modules.profiles.operation_forbidden",
+        `Unable to find template configuration for profile ${req.query.profileId}`, 
+        [req.query.profileId], 12813, undefined, 403, res
+    );
+
+    let profile = profiles.profiles[req.query.profileId];
+    let athena = profiles.profiles["athena"];
+
+    if (req.query.profileId != "common_core" && req.query.profileId != "profile0") return error.createError(
+        "errors.com.epicgames.modules.profiles.invalid_command",
+        `PurchaseCatalogEntry is not valid on ${req.query.profileId} profile`, 
+        ["PurchaseCatalogEntry",req.query.profileId], 12801, undefined, 400, res
+    );
+
+    let MultiUpdate = [{
+        "profileRevision": athena.rvn || 0,
+        "profileId": "athena",
+        "profileChangesBaseRevision": athena.rvn || 0,
+        "profileChanges": [],
+        "profileCommandRevision": athena.commandRevision || 0,
+    }];
+
+    let Notifications = [];
+    let ApplyProfileChanges = [];
+    let BaseRevision = profile.rvn || 0;
+    let QueryRevision = req.query.rvn || -1;
+    let StatChanged = false;
+    let AthenaModified = false;
+
+    let missingFields = checkFields(["offerId"], req.body);
+
+    if (missingFields.fields.length > 0) return error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. [${missingFields.fields.join(", ")}] field(s) is missing.`,
+        [`[${missingFields.fields.join(", ")}]`], 1040, undefined, 400, res
+    );
+
+    if (typeof req.body.offerId != "string") return ValidationError("offerId", "a string", res);
+    if (typeof req.body.purchaseQuantity != "number") return ValidationError("purchaseQuantity", "a number", res);
+    if (req.body.purchaseQuantity < 1) return error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        `Validation Failed. 'purchaseQuantity' is less than 1.`,
+        ['purchaseQuantity'], 1040, undefined, 400, res
+    );
+
+    if (!profile.items) profile.items = {};
+    if (!athena.items) athena.items = {};
+
+    let findOfferId = functions.getOfferID(req.body.offerId);
+    if (!findOfferId) return error.createError(
+        "errors.com.epicgames.fortnite.id_invalid",
+        `Offer ID (id: "${req.body.offerId}") not found`, 
+        [req.body.offerId], 16027, undefined, 400, res
+    );
+
+    switch (true) {
+        case /^BR(Daily|Weekly|Season)Storefront$/.test(findOfferId.name):
+            Notifications.push({
+                "type": "CatalogPurchase",
+                "primary": true,
+                "lootResult": {
+                    "items": []
+                }
+            });
+
+            for (let value of findOfferId.offerId.itemGrants) {
+                const ID = functions.MakeID();
+
+                for (let itemId in athena.items) {
+                    if (value.templateId.toLowerCase() == athena.items[itemId].templateId.toLowerCase()) return error.createError(
+                        "errors.com.epicgames.offer.already_owned",
+                        `You have already bought this item before.`,
+                        undefined, 1040, undefined, 400, res
+                    );
+                }
+
+                const Item = {
+                    "templateId": value.templateId,
+                    "attributes": {
+                        "item_seen": false,
+                        "variants": [],
+                    },
+                    "quantity": 1
+                };
+        
+                athena.items[ID] = Item;
+        
+                MultiUpdate[0].profileChanges.push({
+                    "changeType": "itemAdded",
+                    "itemId": ID,
+                    "item": athena.items[ID]
+                });
+        
+                Notifications[0].lootResult.items.push({
+                    "itemType": Item.templateId,
+                    "itemGuid": ID,
+                    "itemProfile": "athena",
+                    "quantity": 1
+                });
+
+                AthenaModified = true;
+            }
+
+            if (findOfferId.offerId.prices[0].currencyType.toLowerCase() == "mtxcurrency") {
+                let paid = false;
+
+                for (let key in profile.items) {
+                    if (!profile.items[key].templateId.toLowerCase().startsWith("currency:mtx")) continue;
+
+                    let currencyPlatform = profile.items[key].attributes.platform;
+                    if ((currencyPlatform.toLowerCase() != profile.stats.attributes.current_mtx_platform.toLowerCase()) && (currencyPlatform.toLowerCase() != "shared")) continue;
+
+                    if (profile.items[key].quantity < findOfferId.offerId.prices[0].finalPrice) return error.createError(
+                        "errors.com.epicgames.currency.mtx.insufficient",
+                        `You can not afford this item (${findOfferId.offerId.prices[0].finalPrice}), you only have ${profile.items[key].quantity}.`,
+                        [`${findOfferId.offerId.prices[0].finalPrice}`,`${profile.items[key].quantity}`], 1040, undefined, 400, res
+                    );
+
+                    profile.items[key].quantity -= findOfferId.offerId.prices[0].finalPrice;
+                        
+                    ApplyProfileChanges.push({
+                        "changeType": "itemQuantityChanged",
+                        "itemId": key,
+                        "quantity": profile.items[key].quantity
+                    });
+        
+                    paid = true;
+                    StatChanged = true;
+        
+                    break;
+                }
+
+                if (!paid) return error.createError(
+                    "errors.com.epicgames.currency.mtx.insufficient",
+                    `You can not afford this item (${findOfferId.offerId.prices[0].finalPrice}).`,
+                    [`${findOfferId.offerId.prices[0].finalPrice}`], 1040, undefined, 400, res
+                );
+            }
+
+            if (AthenaModified) {
+                athena.rvn += 1;
+                athena.commandRevision += 1;
+                athena.updated = new Date().toISOString();
+
+                MultiUpdate[0].profileRevision = athena.rvn;
+                MultiUpdate[0].profileCommandRevision = athena.commandRevision;
+            }
+        break;
+    }
+
+    if (StatChanged) {
+        profile.rvn += 1;
+        profile.commandRevision += 1;
+        profile.updated = new Date().toISOString();
+
+        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile, [`profiles.athena`]: athena } });
+    }
+
+    if (QueryRevision != BaseRevision) {
+        ApplyProfileChanges = [{
+            "changeType": "fullProfileUpdate",
+            "profile": profile
+        }];
+    }
+
+    res.json({
+        profileRevision: profile.rvn || 0,
+        profileId: req.query.profileId,
+        profileChangesBaseRevision: BaseRevision,
+        profileChanges: ApplyProfileChanges,
+        notifications: Notifications,
+        profileCommandRevision: profile.commandRevision || 0,
+        serverTime: new Date().toISOString(),
+        multiUpdate: MultiUpdate,
+        responseVersion: 1
+    });
+});
+
 app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, async (req, res) => {
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
 
@@ -61,6 +243,8 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
+
+        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -79,8 +263,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
-
-    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", verifyToken, async (req, res) => {
@@ -144,6 +326,8 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
+
+        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -162,8 +346,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
-
-    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyToken, async (req, res) => {
@@ -257,6 +439,8 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
+
+        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -275,8 +459,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
-
-    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization", verifyToken, async (req, res) => {
@@ -451,6 +633,8 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
             "name": Category,
             "value": profile.stats.attributes[Category]
         });
+
+        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -469,8 +653,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
-
-    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verifyToken, async (req, res) => {
@@ -579,6 +761,8 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
+
+        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -597,8 +781,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
-
-    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyToken, async (req, res) => {
@@ -786,6 +968,8 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
             "attributeName": "locker_slots_data",
             "attributeValue": profile.items[req.body.lockerItem].attributes.locker_slots_data
         });
+
+        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
 
     if (QueryRevision != BaseRevision) {
@@ -804,8 +988,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
         serverTime: new Date().toISOString(),
         responseVersion: 1
     });
-
-    if (StatChanged) await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
 });
 
 app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async (req, res) => {
@@ -837,7 +1019,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
         case "IncrementNamedCounterStat": break;
         case "SetHardcoreModifier": break;
         case "SetMtxPlatform": break;
-        case "PurchaseCatalogEntry": break;
+        case "BulkEquipBattleRoyaleCustomization": break;
 
         default:
             error.createError(

@@ -43,7 +43,7 @@
             },
             "Dance": {
               "items": [
-                "",
+                "AthenaDance:eid_dancemoves",
                 "",
                 "",
                 "",
@@ -65372,7 +65372,7 @@
       "accountLevel": 100,
       "favorite_backpack": "",
       "favorite_dance": [
-        "",
+        "AthenaDance:eid_dancemoves",
         "",
         "",
         "",
