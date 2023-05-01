@@ -8,6 +8,7 @@
     "discord.js": "^13.7.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.6.5",
     "path": "^0.12.7",

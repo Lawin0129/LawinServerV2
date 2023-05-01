@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const fs = require("fs");
+const rateLimit = require("express-rate-limit");
 const config = JSON.parse(fs.readFileSync("./Config/config.json").toString());
 
 const log = require("./structs/log.js");
@@ -28,6 +29,7 @@ mongoose.connection.on("error", err => {
     throw err;
 });
 
+app.use(rateLimit({ windowMs: 0.5 * 60 * 1000, max: 50 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
