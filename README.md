@@ -28,6 +28,7 @@
 ### Commands:
 - `/create {email} {username} {password}` - Creates an account on the backend (You can only create 1 account).
 - `/details` - Retrieves your account info.
+- `/lookup {username}` - Retrieves someones account info.
 - `/exchange-code` - Generates an exchange code for login. (One time use for each code and if not used it expires after 5 mins).
 - `/change-username {newUsername}` - You can change your username using this command.
 - `/change-password {newPassword}` - You can change your password using this command.

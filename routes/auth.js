@@ -139,6 +139,9 @@ app.post("/account/api/oauth/token", async (req, res) => {
         [], -1, undefined, 400, res
     );
 
+    let refreshIndex = global.refreshTokens.findIndex(i => i.accountId == req.user.accountId);
+    if (refreshIndex != -1) global.refreshTokens.splice(refreshIndex, 1);
+
     let accessIndex = global.accessTokens.findIndex(i => i.accountId == req.user.accountId);
     if (accessIndex != -1) {
         global.accessTokens.splice(accessIndex, 1);
@@ -146,9 +149,6 @@ app.post("/account/api/oauth/token", async (req, res) => {
         let xmppClient = global.Clients.find(i => i.accountId == req.user.accountId);
         if (xmppClient) xmppClient.client.close();
     }
-
-    let refreshIndex = global.refreshTokens.findIndex(i => i.accountId == req.user.accountId);
-    if (refreshIndex != -1) global.refreshTokens.splice(refreshIndex, 1);
 
     const deviceId = functions.MakeID().replace(/-/ig, "");
     const accessToken = tokenCreation.createAccess(req.user, clientId, req.body.grant_type, deviceId, 8); // expires in 8 hours

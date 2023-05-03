@@ -25,14 +25,16 @@ module.exports = {
     
         if (!targetUser) return interaction.editReply({ content: "The account username you entered does not exist.", ephemeral: true });
 
-        let accessToken = global.accessTokens.findIndex(i => i.accountId == targetUser.accountId);
-        if (accessToken != -1) global.accessTokens.splice(accessToken, 1);
-
         let refreshToken = global.refreshTokens.findIndex(i => i.accountId == targetUser.accountId);
         if (refreshToken != -1) global.refreshTokens.splice(refreshToken, 1);
 
-        let xmppClient = global.Clients.find(client => client.accountId == targetUser.accountId);
-        if (xmppClient) xmppClient.client.close();
+        let accessToken = global.accessTokens.findIndex(i => i.accountId == targetUser.accountId);
+        if (accessToken != -1) {
+            global.accessTokens.splice(accessToken, 1);
+
+            let xmppClient = global.Clients.find(client => client.accountId == targetUser.accountId);
+            if (xmppClient) xmppClient.client.close();
+        }
 
         if (accessToken != -1 || refreshToken != -1) return interaction.editReply({ content: `Successfully kicked ${targetUser.username}`, ephemeral: true });
         
