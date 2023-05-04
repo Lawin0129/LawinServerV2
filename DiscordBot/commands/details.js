@@ -16,7 +16,6 @@ module.exports = {
         .setColor("#56ff00")
         .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
         .setFields(
-            { name: "Discord", value: `<@${user.discordId}>` },
             { name: "Created", value: `${new Date(user.created)}`.substring(0, 15) },
             { name: "Banned?", value: `${user.banned}` },
             { name: "Account ID", value: user.accountId },
