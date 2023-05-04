@@ -23,7 +23,7 @@ async function verifyToken(req, res, next) {
 
         if (req.user.banned) return error.createError(
             "errors.com.epicgames.account.account_not_active",
-            "Sorry, your account is inactive and may not login.", 
+            "You have been permanently banned from Fortnite.", 
             [], -1, undefined, 400, res
         );
 
@@ -59,7 +59,7 @@ async function verifyClient(req, res, next) {
 
             if (req.user.banned) return error.createError(
                 "errors.com.epicgames.account.account_not_active",
-                "Sorry, your account is inactive and may not login.", 
+                "You have been permanently banned from Fortnite.", 
                 [], -1, undefined, 400, res
             );
         }
