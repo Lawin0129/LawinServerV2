@@ -390,6 +390,8 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
     let HomebaseBannerIconID = "";
     let HomebaseBannerColorID = "";
 
+    if (!profiles.profiles[bannerProfileId].items) profiles.profiles[bannerProfileId].items = {};
+
     for (let itemId in profiles.profiles[bannerProfileId].items) {
         let templateId = profiles.profiles[bannerProfileId].items[itemId].templateId;
 
@@ -508,6 +510,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
     );
 
     if (typeof req.body.itemToSlot != "string") return ValidationError("itemToSlot", "a string", res);
+    if (typeof req.body.indexWithinSlot != "number") return ValidationError("indexWithinSlot", "a number", res);
     if (typeof req.body.slotName != "string") return ValidationError("slotName", "a string", res);
 
     if (!profile.items) profile.items = {};
@@ -571,11 +574,9 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
         case "Dance":
             if (!profile.items[activeLoadoutId].attributes.locker_slots_data.slots[req.body.slotName]) break;
 
-            var indexwithinslot = Number(req.body.indexWithinSlot) || 0;
-
-            if (indexwithinslot >= 0 && indexwithinslot <= 5) {
-                profile.stats.attributes.favorite_dance[indexwithinslot] = req.body.itemToSlot;
-                profile.items[activeLoadoutId].attributes.locker_slots_data.slots.Dance.items[indexwithinslot] = templateId;
+            if (req.body.indexWithinSlot >= 0 && req.body.indexWithinSlot <= 5) {
+                profile.stats.attributes.favorite_dance[req.body.indexWithinSlot] = req.body.itemToSlot;
+                profile.items[activeLoadoutId].attributes.locker_slots_data.slots.Dance.items[req.body.indexWithinSlot] = templateId;
 
                 StatChanged = true;
             }
@@ -584,18 +585,16 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
         case "ItemWrap":
             if (!profile.items[activeLoadoutId].attributes.locker_slots_data.slots[req.body.slotName]) break;
 
-            var indexwithinslot = Number(req.body.indexWithinSlot) || 0;
-
             switch (true) {
-                case indexwithinslot >= 0 && indexwithinslot <= 7:
-                    profile.stats.attributes.favorite_itemwraps[indexwithinslot] = req.body.itemToSlot;
-                    profile.items[activeLoadoutId].attributes.locker_slots_data.slots.ItemWrap.items[indexwithinslot] = templateId;
+                case req.body.indexWithinSlot >= 0 && req.body.indexWithinSlot <= 7:
+                    profile.stats.attributes.favorite_itemwraps[req.body.indexWithinSlot] = req.body.itemToSlot;
+                    profile.items[activeLoadoutId].attributes.locker_slots_data.slots.ItemWrap.items[req.body.indexWithinSlot] = templateId;
 
                     StatChanged = true;
                 break;
 
-                case indexwithinslot == -1:
-                    for (var i = 0; i < 7; i++) {
+                case req.body.indexWithinSlot == -1:
+                    for (let i = 0; i < 7; i++) {
                         profile.stats.attributes.favorite_itemwraps[i] = req.body.itemToSlot;
                         profile.items[activeLoadoutId].attributes.locker_slots_data.slots.ItemWrap.items[i] = templateId;
                     }
@@ -610,7 +609,11 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
             if (!profile.items[activeLoadoutId].attributes.locker_slots_data.slots[req.body.slotName]) break;
 
             if (req.body.slotName == "Pickaxe" || req.body.slotName == "Glider") {
-                if (!req.body.itemToSlot) break;
+                if (!req.body.itemToSlot) return error.createError(
+                    "errors.com.epicgames.fortnite.id_invalid",
+                    `${req.body.slotName} can not be empty.`, 
+                    [req.body.slotName], 16027, undefined, 400, res
+                );
             }
 
             profile.stats.attributes[(`favorite_${req.body.slotName}`).toLowerCase()] = req.body.itemToSlot;
@@ -713,6 +716,8 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
 
     let HomebaseBannerIconID = "";
     let HomebaseBannerColorID = "";
+
+    if (!profiles.profiles[bannerProfileId].items) profiles.profiles[bannerProfileId].items = {};
 
     for (let itemId in profiles.profiles[bannerProfileId].items) {
         let templateId = profiles.profiles[bannerProfileId].items[itemId].templateId;
@@ -830,6 +835,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
     );
 
     if (typeof req.body.itemToSlot != "string") return ValidationError("itemToSlot", "a string", res);
+    if (typeof req.body.slotIndex != "number") return ValidationError("slotIndex", "a number", res);
     if (typeof req.body.lockerItem != "string") return ValidationError("lockerItem", "a string", res);
     if (typeof req.body.category != "string") return ValidationError("category", "a string", res);
 
@@ -909,11 +915,9 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
         case "Dance":
             if (!profile.items[req.body.lockerItem].attributes.locker_slots_data.slots[req.body.category]) break;
 
-            var indexwithinslot = Number(req.body.slotIndex) || 0;
-
-            if (indexwithinslot >= 0 && indexwithinslot <= 5) {
-                profile.items[req.body.lockerItem].attributes.locker_slots_data.slots.Dance.items[indexwithinslot] = req.body.itemToSlot || "";
-                profile.stats.attributes.favorite_dance[indexwithinslot] = itemToSlotID || req.body.itemToSlot;
+            if (req.body.slotIndex >= 0 && req.body.slotIndex <= 5) {
+                profile.items[req.body.lockerItem].attributes.locker_slots_data.slots.Dance.items[req.body.slotIndex] = req.body.itemToSlot;
+                profile.stats.attributes.favorite_dance[req.body.slotIndex] = itemToSlotID || req.body.itemToSlot;
 
                 StatChanged = true;
             }
@@ -922,19 +926,17 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
         case "ItemWrap":
             if (!profile.items[req.body.lockerItem].attributes.locker_slots_data.slots[req.body.category]) break;
 
-            var indexwithinslot = Number(req.body.slotIndex) || 0;
-
             switch (true) {
-                case indexwithinslot >= 0 && indexwithinslot <= 7:
-                    profile.items[req.body.lockerItem].attributes.locker_slots_data.slots.ItemWrap.items[indexwithinslot] = req.body.itemToSlot || "";
-                    profile.stats.attributes.favorite_itemwraps[indexwithinslot] = itemToSlotID || req.body.itemToSlot;
+                case req.body.slotIndex >= 0 && req.body.slotIndex <= 7:
+                    profile.items[req.body.lockerItem].attributes.locker_slots_data.slots.ItemWrap.items[req.body.slotIndex] = req.body.itemToSlot;
+                    profile.stats.attributes.favorite_itemwraps[req.body.slotIndex] = itemToSlotID || req.body.itemToSlot;
 
                     StatChanged = true;
                 break;
 
-                case indexwithinslot == -1:
-                    for (var i = 0; i < 7; i++) {
-                        profile.items[req.body.lockerItem].attributes.locker_slots_data.slots.ItemWrap.items[i] = req.body.itemToSlot || "";
+                case req.body.slotIndex == -1:
+                    for (let i = 0; i < 7; i++) {
+                        profile.items[req.body.lockerItem].attributes.locker_slots_data.slots.ItemWrap.items[i] = req.body.itemToSlot;
                         profile.stats.attributes.favorite_itemwraps[i] = itemToSlotID || req.body.itemToSlot;
                     }
 
@@ -947,7 +949,11 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
             if (!profile.items[req.body.lockerItem].attributes.locker_slots_data.slots[req.body.category]) break;
 
             if (req.body.category == "Pickaxe" || req.body.category == "Glider") {
-                if (!req.body.itemToSlot) break;
+                if (!req.body.itemToSlot) return error.createError(
+                    "errors.com.epicgames.fortnite.id_invalid",
+                    `${req.body.category} can not be empty.`, 
+                    [req.body.category], 16027, undefined, 400, res
+                );
             }
 
             profile.items[req.body.lockerItem].attributes.locker_slots_data.slots[req.body.category].items = [req.body.itemToSlot];
