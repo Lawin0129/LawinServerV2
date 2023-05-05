@@ -11,7 +11,7 @@ const functions = require("./structs/functions.js");
 
 if (!fs.existsSync("./ClientSettings")) fs.mkdirSync("./ClientSettings");
 
-global.JWT_SECRET = "LAWIN_BACKEND";
+global.JWT_SECRET = functions.MakeID();
 const PORT = 8080;
 
 global.accessTokens = [];

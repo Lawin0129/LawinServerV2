@@ -1,5 +1,4 @@
 const fs = require("fs");
-const Profile = require("../model/profiles.js");
 
 function createProfiles(accountId) {
     let profiles = {};
