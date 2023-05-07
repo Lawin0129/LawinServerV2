@@ -8,6 +8,94 @@ const functions = require("../structs/functions.js");
 
 const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 
+app.post("/fortnite/api/game/v2/profile/*/client/RemoveGiftBox", verifyToken, async (req, res) => {
+    const profiles = await Profile.findOne({ accountId: req.user.accountId });
+
+    if (!await profileManager.validateProfile(req.query.profileId, profiles)) return error.createError(
+        "errors.com.epicgames.modules.profiles.operation_forbidden",
+        `Unable to find template configuration for profile ${req.query.profileId}`, 
+        [req.query.profileId], 12813, undefined, 403, res
+    );
+
+    let profile = profiles.profiles[req.query.profileId];
+
+    if (req.query.profileId != "common_core" && req.query.profileId != "profile0") return error.createError(
+        "errors.com.epicgames.modules.profiles.invalid_command",
+        `RemoveGiftBox is not valid on ${req.query.profileId} profile`, 
+        ["RemoveGiftBox",req.query.profileId], 12801, undefined, 400, res
+    );
+
+    let ApplyProfileChanges = [];
+    let BaseRevision = profile.rvn || 0;
+    let QueryRevision = req.query.rvn || -1;
+    let StatChanged = false;
+
+    if (typeof req.body.giftBoxItemId == "string") {
+        if (!profile.items[req.body.giftBoxItemId]) return error.createError(
+            "errors.com.epicgames.fortnite.id_invalid",
+            `Item (id: "${req.body.giftBoxItemId}") not found`, 
+            [req.body.giftBoxItemId], 16027, undefined, 400, res
+        );
+
+        if (!profile.items[req.body.giftBoxItemId].templateId.startsWith("GiftBox:")) return error.createError(
+            "errors.com.epicgames.fortnite.id_invalid",
+            `The specified item id is not a giftbox.`, 
+            [req.body.giftBoxItemId], 16027, undefined, 400, res
+        );
+
+        delete profile.items[req.body.giftBoxItemId];
+
+        ApplyProfileChanges.push({
+            "changeType": "itemRemoved",
+            "itemId": req.body.giftBoxItemId
+        });
+
+        StatChanged = true;
+    }
+
+    if (Array.isArray(req.body.giftBoxItemIds)) {
+        for (let giftBoxItemId of req.body.giftBoxItemIds) {
+            if (typeof giftBoxItemId != "string") continue;
+            if (!profile.items[giftBoxItemId]) continue;
+            if (!profile.items[giftBoxItemId].templateId.startsWith("GiftBox:")) continue;
+    
+            delete profile.items[giftBoxItemId];
+    
+            ApplyProfileChanges.push({
+                "changeType": "itemRemoved",
+                "itemId": giftBoxItemId
+            });
+    
+            StatChanged = true;
+        }
+    }
+
+    if (StatChanged) {
+        profile.rvn += 1;
+        profile.commandRevision += 1;
+        profile.updated = new Date().toISOString();
+
+        await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
+    }
+
+    if (QueryRevision != BaseRevision) {
+        ApplyProfileChanges = [{
+            "changeType": "fullProfileUpdate",
+            "profile": profile
+        }];
+    }
+
+    res.json({
+        profileRevision: profile.rvn || 0,
+        profileId: req.query.profileId,
+        profileChangesBaseRevision: BaseRevision,
+        profileChanges: ApplyProfileChanges,
+        profileCommandRevision: profile.commandRevision || 0,
+        serverTime: new Date().toISOString(),
+        responseVersion: 1
+    });
+});
+
 app.post("/fortnite/api/game/v2/profile/*/client/PurchaseCatalogEntry", verifyToken, async (req, res) => {
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
 
@@ -144,7 +232,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/PurchaseCatalogEntry", verifyTo
                     break;
                 }
 
-                if (!paid) return error.createError(
+                if (!paid && findOfferId.offerId.prices[0].finalPrice > 0) return error.createError(
                     "errors.com.epicgames.currency.mtx.insufficient",
                     `You can not afford this item (${findOfferId.offerId.prices[0].finalPrice}).`,
                     [`${findOfferId.offerId.prices[0].finalPrice}`], 1040, undefined, 400, res
@@ -1110,6 +1198,10 @@ function ValidationError(field, type, res) {
         `Validation Failed. '${field}' is not ${type}.`,
         [field], 1040, undefined, 400, res
     );
+}
+
+function checkIfDuplicateExists(arr) {
+    return new Set(arr).size !== arr.length
 }
 
 module.exports = app;
