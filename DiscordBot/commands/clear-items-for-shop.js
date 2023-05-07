@@ -1,5 +1,6 @@
 const User = require("../../model/user.js");
 const Profile = require("../../model/profiles.js");
+const functions = require("../../structs/functions.js");
 const fs = require("fs");
 
 module.exports = {
@@ -46,6 +47,12 @@ module.exports = {
             athena.updated = new Date().toISOString();
 
             await profiles.updateOne({ $set: { [`profiles.athena`]: athena } });
+
+            functions.sendXmppMessageToId({
+                type: "com.epicgames.gift.received",
+                payload: {},
+                timestamp: new Date().toISOString()
+            }, targetUser.accountId);
 
             return interaction.editReply({ content: "Successfully cleared items in your profile that are from the item shop."});
         }
