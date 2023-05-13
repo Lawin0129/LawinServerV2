@@ -48,6 +48,8 @@ module.exports = {
 
             await profiles.updateOne({ $set: { [`profiles.athena`]: athena } });
 
+            if (global.Clients.some(i => i.accountId == targetUser.accountId)) global.giftReceived[targetUser.accountId] = true;
+
             functions.sendXmppMessageToId({
                 type: "com.epicgames.gift.received",
                 payload: {},

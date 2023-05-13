@@ -8,6 +8,8 @@ const functions = require("../structs/functions.js");
 
 const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 
+global.giftReceived = {};
+
 app.post("/fortnite/api/game/v2/profile/*/client/RemoveGiftBox", verifyToken, async (req, res) => {
     const profiles = await Profile.findOne({ accountId: req.user.accountId });
 
@@ -28,7 +30,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/RemoveGiftBox", verifyToken, as
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
-    let StatChanged = false;
 
     if (typeof req.body.giftBoxItemId == "string") {
         if (!profile.items[req.body.giftBoxItemId]) return error.createError(
@@ -49,8 +50,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/RemoveGiftBox", verifyToken, as
             "changeType": "itemRemoved",
             "itemId": req.body.giftBoxItemId
         });
-
-        StatChanged = true;
     }
 
     if (Array.isArray(req.body.giftBoxItemIds)) {
@@ -65,12 +64,10 @@ app.post("/fortnite/api/game/v2/profile/*/client/RemoveGiftBox", verifyToken, as
                 "changeType": "itemRemoved",
                 "itemId": giftBoxItemId
             });
-    
-            StatChanged = true;
         }
     }
 
-    if (StatChanged) {
+    if (ApplyProfileChanges.length > 0) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
@@ -126,8 +123,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/PurchaseCatalogEntry", verifyTo
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
-    let StatChanged = false;
-    let AthenaModified = false;
 
     let missingFields = checkFields(["offerId"], req.body);
 
@@ -199,8 +194,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/PurchaseCatalogEntry", verifyTo
                     "itemProfile": "athena",
                     "quantity": 1
                 });
-
-                AthenaModified = true;
             }
 
             if (findOfferId.offerId.prices[0].currencyType.toLowerCase() == "mtxcurrency") {
@@ -227,7 +220,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/PurchaseCatalogEntry", verifyTo
                     });
         
                     paid = true;
-                    StatChanged = true;
         
                     break;
                 }
@@ -239,7 +231,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/PurchaseCatalogEntry", verifyTo
                 );
             }
 
-            if (AthenaModified) {
+            if (MultiUpdate[0].profileChanges.length > 0) {
                 athena.rvn += 1;
                 athena.commandRevision += 1;
                 athena.updated = new Date().toISOString();
@@ -250,7 +242,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/PurchaseCatalogEntry", verifyTo
         break;
     }
 
-    if (StatChanged) {
+    if (ApplyProfileChanges.length > 0) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
@@ -298,7 +290,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
-    let StatChanged = false;
 
     let missingFields = checkFields(["itemIds"], req.body);
 
@@ -323,11 +314,9 @@ app.post("/fortnite/api/game/v2/profile/*/client/MarkItemSeen", verifyToken, asy
             "attributeName": "item_seen",
             "attributeValue": true
         });
-
-        StatChanged = true;
     }
 
-    if (StatChanged) {
+    if (ApplyProfileChanges.length > 0) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
@@ -379,7 +368,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
-    let StatChanged = false;
 
     let missingFields = checkFields(["itemIds","itemFavStatus"], req.body);
 
@@ -405,12 +393,10 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetItemFavoriteStatusBatch", ve
             "itemId": req.body.itemIds[i],
             "attributeName": "favorite",
             "attributeValue": profile.items[req.body.itemIds[i]].attributes.favorite
-        })
-
-        StatChanged = true;
+        });
     }
 
-    if (StatChanged) {
+    if (ApplyProfileChanges.length > 0) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
@@ -460,7 +446,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
-    let StatChanged = false;
 
     let missingFields = checkFields(["homebaseBannerIconId","homebaseBannerColorId"], req.body);
 
@@ -523,9 +508,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetBattleRoyaleBanner", verifyT
         "value": profile.stats.attributes.banner_color
     });
 
-    StatChanged = true;
-
-    if (StatChanged) {
+    if (ApplyProfileChanges.length > 0) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
@@ -577,16 +560,15 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
-    let StatChanged = false;
     let specialCosmetics = [
-        "athenacharacter:cid_random",
-        "athenabackpack:bid_random",
-        "athenapickaxe:pickaxe_random",
-        "athenaglider:glider_random",
-        "athenaskydivecontrail:trails_random",
-        "athenaitemwrap:wrap_random",
-        "athenamusicpack:musicpack_random",
-        "athenaloadingscreen:lsid_random"
+        "AthenaCharacter:cid_random",
+        "AthenaBackpack:bid_random",
+        "AthenaPickaxe:pickaxe_random",
+        "AthenaGlider:glider_random",
+        "AthenaSkyDiveContrail:trails_random",
+        "AthenaItemWrap:wrap_random",
+        "AthenaMusicPack:musicpack_random",
+        "AthenaLoadingScreen:lsid_random"
     ];
 
     let missingFields = checkFields(["slotName"], req.body);
@@ -604,7 +586,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
     if (!profile.items) profile.items = {};
 
     if (!profile.items[req.body.itemToSlot] && req.body.itemToSlot) {
-        let item = req.body.itemToSlot.toLowerCase();
+        let item = req.body.itemToSlot;
 
         if (!specialCosmetics.includes(item)) {
             return error.createError(
@@ -613,7 +595,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
                 [req.body.itemToSlot], 16027, undefined, 400, res
             );
         } else {
-            if (!item.startsWith((`Athena${req.body.slotName}:`).toLowerCase())) return error.createError(
+            if (!item.startsWith(`Athena${req.body.slotName}:`)) return error.createError(
                 "errors.com.epicgames.fortnite.id_invalid",
                 `Cannot slot item of type ${item.split(":")[0]} in slot of category ${req.body.slotName}`, 
                 [item.split(":")[0],req.body.slotName], 16027, undefined, 400, res
@@ -666,7 +648,11 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
                 profile.stats.attributes.favorite_dance[req.body.indexWithinSlot] = req.body.itemToSlot;
                 profile.items[activeLoadoutId].attributes.locker_slots_data.slots.Dance.items[req.body.indexWithinSlot] = templateId;
 
-                StatChanged = true;
+                ApplyProfileChanges.push({
+                    "changeType": "statModified",
+                    "name": "favorite_dance",
+                    "value": profile.stats.attributes["favorite_dance"]
+                });
             }
         break;
 
@@ -678,7 +664,11 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
                     profile.stats.attributes.favorite_itemwraps[req.body.indexWithinSlot] = req.body.itemToSlot;
                     profile.items[activeLoadoutId].attributes.locker_slots_data.slots.ItemWrap.items[req.body.indexWithinSlot] = templateId;
 
-                    StatChanged = true;
+                    ApplyProfileChanges.push({
+                        "changeType": "statModified",
+                        "name": "favorite_itemwraps",
+                        "value": profile.stats.attributes["favorite_itemwraps"]
+                    });
                 break;
 
                 case req.body.indexWithinSlot == -1:
@@ -687,7 +677,11 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
                         profile.items[activeLoadoutId].attributes.locker_slots_data.slots.ItemWrap.items[i] = templateId;
                     }
 
-                    StatChanged = true;
+                    ApplyProfileChanges.push({
+                        "changeType": "statModified",
+                        "name": "favorite_itemwraps",
+                        "value": profile.stats.attributes["favorite_itemwraps"]
+                    });
                 break;
             }
         break;
@@ -707,23 +701,18 @@ app.post("/fortnite/api/game/v2/profile/*/client/EquipBattleRoyaleCustomization"
             profile.stats.attributes[(`favorite_${req.body.slotName}`).toLowerCase()] = req.body.itemToSlot;
             profile.items[activeLoadoutId].attributes.locker_slots_data.slots[req.body.slotName].items = [templateId];
 
-            StatChanged = true;
+            ApplyProfileChanges.push({
+                "changeType": "statModified",
+                "name": (`favorite_${req.body.slotName}`).toLowerCase(),
+                "value": profile.stats.attributes[(`favorite_${req.body.slotName}`).toLowerCase()]
+            });
         break;
     }
 
-    if (StatChanged) {
-        let Category = (`favorite_${req.body.slotName}`).toLowerCase();
-        if (Category == "favorite_itemwrap") Category += "s";
-
+    if (ApplyProfileChanges.length > 0) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
-
-        ApplyProfileChanges.push({
-            "changeType": "statModified",
-            "name": Category,
-            "value": profile.stats.attributes[Category]
-        });
 
         await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
@@ -772,7 +761,6 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
-    let StatChanged = false;
 
     let missingFields = checkFields(["bannerIconTemplateName","bannerColorTemplateName","lockerItem"], req.body);
 
@@ -848,9 +836,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerBanner", verif
         "attributeValue": profile.items[req.body.lockerItem].attributes.banner_color_template
     });
 
-    StatChanged = true;
-
-    if (StatChanged) {
+    if (ApplyProfileChanges.length > 0) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
@@ -902,16 +888,15 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
-    let StatChanged = false;
     let specialCosmetics = [
-        "athenacharacter:cid_random",
-        "athenabackpack:bid_random",
-        "athenapickaxe:pickaxe_random",
-        "athenaglider:glider_random",
-        "athenaskydivecontrail:trails_random",
-        "athenaitemwrap:wrap_random",
-        "athenamusicpack:musicpack_random",
-        "athenaloadingscreen:lsid_random"
+        "AthenaCharacter:cid_random",
+        "AthenaBackpack:bid_random",
+        "AthenaPickaxe:pickaxe_random",
+        "AthenaGlider:glider_random",
+        "AthenaSkyDiveContrail:trails_random",
+        "AthenaItemWrap:wrap_random",
+        "AthenaMusicPack:musicpack_random",
+        "AthenaLoadingScreen:lsid_random"
     ];
 
     let missingFields = checkFields(["category","lockerItem"], req.body);
@@ -950,7 +935,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
     );
 
     if (!profile.items[itemToSlotID] && req.body.itemToSlot) {
-        let item = req.body.itemToSlot.toLowerCase();
+        let item = req.body.itemToSlot;
 
         if (!specialCosmetics.includes(item)) {
             return error.createError(
@@ -959,7 +944,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
                 [req.body.itemToSlot], 16027, undefined, 400, res
             );
         } else {
-            if (!item.startsWith((`Athena${req.body.category}:`).toLowerCase())) return error.createError(
+            if (!item.startsWith(`Athena${req.body.category}:`)) return error.createError(
                 "errors.com.epicgames.fortnite.id_invalid",
                 `Cannot slot item of type ${item.split(":")[0]} in slot of category ${req.body.category}`, 
                 [item.split(":")[0],req.body.category], 16027, undefined, 400, res
@@ -1007,7 +992,12 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
                 profile.items[req.body.lockerItem].attributes.locker_slots_data.slots.Dance.items[req.body.slotIndex] = req.body.itemToSlot;
                 profile.stats.attributes.favorite_dance[req.body.slotIndex] = itemToSlotID || req.body.itemToSlot;
 
-                StatChanged = true;
+                ApplyProfileChanges.push({
+                    "changeType": "itemAttrChanged",
+                    "itemId": req.body.lockerItem,
+                    "attributeName": "locker_slots_data",
+                    "attributeValue": profile.items[req.body.lockerItem].attributes.locker_slots_data
+                });
             }
         break;
 
@@ -1019,7 +1009,12 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
                     profile.items[req.body.lockerItem].attributes.locker_slots_data.slots.ItemWrap.items[req.body.slotIndex] = req.body.itemToSlot;
                     profile.stats.attributes.favorite_itemwraps[req.body.slotIndex] = itemToSlotID || req.body.itemToSlot;
 
-                    StatChanged = true;
+                    ApplyProfileChanges.push({
+                        "changeType": "itemAttrChanged",
+                        "itemId": req.body.lockerItem,
+                        "attributeName": "locker_slots_data",
+                        "attributeValue": profile.items[req.body.lockerItem].attributes.locker_slots_data
+                    });
                 break;
 
                 case req.body.slotIndex == -1:
@@ -1028,7 +1023,12 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
                         profile.stats.attributes.favorite_itemwraps[i] = itemToSlotID || req.body.itemToSlot;
                     }
 
-                    StatChanged = true;
+                    ApplyProfileChanges.push({
+                        "changeType": "itemAttrChanged",
+                        "itemId": req.body.lockerItem,
+                        "attributeName": "locker_slots_data",
+                        "attributeValue": profile.items[req.body.lockerItem].attributes.locker_slots_data
+                    });
                 break;
             }
         break;
@@ -1047,21 +1047,19 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetCosmeticLockerSlot", verifyT
             profile.items[req.body.lockerItem].attributes.locker_slots_data.slots[req.body.category].items = [req.body.itemToSlot];
             profile.stats.attributes[(`favorite_${req.body.category}`).toLowerCase()] = itemToSlotID || req.body.itemToSlot;
 
-            StatChanged = true;
+            ApplyProfileChanges.push({
+                "changeType": "itemAttrChanged",
+                "itemId": req.body.lockerItem,
+                "attributeName": "locker_slots_data",
+                "attributeValue": profile.items[req.body.lockerItem].attributes.locker_slots_data
+            });
         break;
     }
 
-    if (StatChanged) {
+    if (ApplyProfileChanges.length > 0) {
         profile.rvn += 1;
         profile.commandRevision += 1;
         profile.updated = new Date().toISOString();
-
-        ApplyProfileChanges.push({
-            "changeType": "itemAttrChanged",
-            "itemId": req.body.lockerItem,
-            "attributeName": "locker_slots_data",
-            "attributeValue": profile.items[req.body.lockerItem].attributes.locker_slots_data
-        });
 
         await profiles.updateOne({ $set: { [`profiles.${req.query.profileId}`]: profile } });
     }
@@ -1101,6 +1099,25 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
         profile.stats.attributes.season_num = memory.season;
     }
 
+    let MultiUpdate = [];
+
+    if ((req.query.profileId == "common_core" || req.query.profileId == "profile0") && global.giftReceived[req.user.accountId]) {
+        global.giftReceived[req.user.accountId] = false;
+
+        let athena = profiles.profiles["athena"];
+
+        MultiUpdate = [{
+            "profileRevision": athena.rvn || 0,
+            "profileId": "athena",
+            "profileChangesBaseRevision": athena.rvn || 0,
+            "profileChanges": [{
+                "changeType": "fullProfileUpdate",
+                "profile": athena
+            }],
+            "profileCommandRevision": athena.commandRevision || 0,
+        }];
+    }
+
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn || 0;
     let QueryRevision = req.query.rvn || -1;
@@ -1138,6 +1155,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/:operation", verifyToken, async
         profileChanges: ApplyProfileChanges,
         profileCommandRevision: profile.commandRevision || 0,
         serverTime: new Date().toISOString(),
+        multiUpdate: MultiUpdate,
         responseVersion: 1
     });
 });
