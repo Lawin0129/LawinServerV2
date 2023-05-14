@@ -1,35 +1,35 @@
 {
     "//": "BR Item Shop Config",
     "daily1": {
-        "itemGrants": [""],
+        "itemGrants": ["AthenaCharacter:cid_001_athena_commando_f_default"],
         "price": 0
     },
     "daily2": {
-        "itemGrants": [""],
+        "itemGrants": ["AthenaCharacter:cid_002_athena_commando_f_default"],
         "price": 0
     },
     "daily3": {
-        "itemGrants": [""],
+        "itemGrants": ["AthenaCharacter:cid_003_athena_commando_f_default"],
         "price": 0
     },
     "daily4": {
-        "itemGrants": [""],
+        "itemGrants": ["AthenaCharacter:cid_004_athena_commando_f_default"],
         "price": 0
     },
     "daily5": {
-        "itemGrants": [""],
+        "itemGrants": ["AthenaCharacter:cid_005_athena_commando_m_default"],
         "price": 0
     },
     "daily6": {
-        "itemGrants": [""],
+        "itemGrants": ["AthenaCharacter:cid_006_athena_commando_m_default"],
         "price": 0
     },
     "featured1": {
-        "itemGrants": [""],
+        "itemGrants": ["AthenaCharacter:cid_007_athena_commando_m_default"],
         "price": 0
     },
     "featured2": {
-        "itemGrants": [""],
+        "itemGrants": ["AthenaCharacter:cid_008_athena_commando_m_default"],
         "price": 0
     }
 }
