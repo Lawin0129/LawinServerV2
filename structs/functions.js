@@ -2,6 +2,7 @@ const XMLBuilder = require("xmlbuilder");
 const uuid = require("uuid");
 const bcrypt = require("bcrypt");
 const fs = require("fs");
+const crypto = require("crypto");
 const path = require("path");
 
 const User = require("../model/user.js");
@@ -170,9 +171,6 @@ function getItemShop() {
             for (let itemGrant of CatalogConfig[value].itemGrants) {
                 if (typeof itemGrant != "string") continue;
                 if (itemGrant.length == 0) continue;
-                
-                CatalogEntry.devName = CatalogConfig[value].itemGrants[0];
-                CatalogEntry.offerId = CatalogConfig[value].itemGrants[0];
 
                 CatalogEntry.requirements.push({ "requirementType": "DenyOnItemOwnership", "requiredId": itemGrant, "minQuantity": 1 });
                 CatalogEntry.itemGrants.push({ "templateId": itemGrant, "quantity": 1 });
@@ -187,7 +185,14 @@ function getItemShop() {
                 "basePrice": CatalogConfig[value].price
             }];
 
-            if (CatalogEntry.itemGrants.length > 0) catalog.storefronts[i].catalogEntries.push(CatalogEntry);
+            if (CatalogEntry.itemGrants.length > 0) {
+                let uniqueIdentifier = crypto.createHash("sha1").update(`${JSON.stringify(CatalogConfig[value].itemGrants)}_${CatalogConfig[value].price}`).digest("hex");
+
+                CatalogEntry.devName = uniqueIdentifier;
+                CatalogEntry.offerId = uniqueIdentifier;
+
+                catalog.storefronts[i].catalogEntries.push(CatalogEntry);
+            }
         }
     } catch {}
 
