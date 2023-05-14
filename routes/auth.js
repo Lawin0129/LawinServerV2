@@ -35,6 +35,9 @@ app.post("/account/api/oauth/token", async (req, res) => {
             if (clientToken != -1) global.clientTokens.splice(clientToken, 1);
 
             const token = tokenCreation.createClient(clientId, req.body.grant_type, ip, 4); // expires in 4 hours
+
+            functions.UpdateTokens();
+
             const decodedClient = jwt.decode(token);
 
             res.json({
@@ -84,10 +87,17 @@ app.post("/account/api/oauth/token", async (req, res) => {
 
             try {
                 if (refreshToken == -1) throw new Error("Refresh token invalid.");
+                let decodedRefreshToken = jwt.decode(refresh_token.replace("eg1~", ""));
 
-                jwt.verify(refresh_token.replace("eg1~", ""), global.JWT_SECRET);
+                if (DateAddHours(new Date(decodedRefreshToken.creation_date), decodedRefreshToken.hours_expire).getTime() <= new Date().getTime()) {
+                    throw new Error("Expired refresh token.");
+                }
             } catch {
-                if (refreshToken != -1) global.refreshTokens.splice(refreshToken, 1);
+                if (refreshToken != -1) {
+                    global.refreshTokens.splice(refreshToken, 1);
+
+                    functions.UpdateTokens();
+                }
 
                 error.createError(
                     "errors.com.epicgames.account.auth_token.invalid_refresh_token",
@@ -153,6 +163,8 @@ app.post("/account/api/oauth/token", async (req, res) => {
     const deviceId = functions.MakeID().replace(/-/ig, "");
     const accessToken = tokenCreation.createAccess(req.user, clientId, req.body.grant_type, deviceId, 8); // expires in 8 hours
     const refreshToken = tokenCreation.createRefresh(req.user, clientId, req.body.grant_type, deviceId, 24); // expires in 24 hours
+
+    functions.UpdateTokens();
 
     const decodedAccess = jwt.decode(accessToken);
     const decodedRefresh = jwt.decode(refreshToken);
@@ -251,6 +263,8 @@ app.delete("/account/api/oauth/sessions/kill/:token", (req, res) => {
     
     let clientIndex = global.clientTokens.findIndex(i => i.token == token);
     if (clientIndex != -1) global.clientTokens.splice(clientIndex, 1);
+
+    if (accessIndex != -1 || clientIndex != -1) functions.UpdateTokens();
 
     res.status(204).end();
 });

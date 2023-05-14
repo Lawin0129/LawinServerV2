@@ -1,4 +1,5 @@
 const User = require("../../model/user.js");
+const functions = require("../../structs/functions.js");
 
 module.exports = {
     commandInfo: {
@@ -22,7 +23,11 @@ module.exports = {
             if (xmppClient) xmppClient.client.close();
         }
 
-        if (accessToken != -1 || refreshToken != -1) return interaction.editReply({ content: `Successfully signed out of all sessions!`, ephemeral: true });
+        if (accessToken != -1 || refreshToken != -1) {
+            functions.UpdateTokens();
+
+            return interaction.editReply({ content: `Successfully signed out of all sessions!`, ephemeral: true });
+        }
         
         interaction.editReply({ content: `You have no current active sessions.`, ephemeral: true });
     }

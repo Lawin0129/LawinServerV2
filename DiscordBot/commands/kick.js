@@ -1,4 +1,5 @@
 const User = require("../../model/user.js");
+const functions = require("../../structs/functions.js");
 const fs = require("fs");
 const config = JSON.parse(fs.readFileSync("./Config/config.json").toString());
 
@@ -36,7 +37,11 @@ module.exports = {
             if (xmppClient) xmppClient.client.close();
         }
 
-        if (accessToken != -1 || refreshToken != -1) return interaction.editReply({ content: `Successfully kicked ${targetUser.username}`, ephemeral: true });
+        if (accessToken != -1 || refreshToken != -1) {
+            functions.UpdateTokens();
+            
+            return interaction.editReply({ content: `Successfully kicked ${targetUser.username}`, ephemeral: true });
+        }
         
         interaction.editReply({ content: `There are no current active sessions by ${targetUser.username}`, ephemeral: true });
     }

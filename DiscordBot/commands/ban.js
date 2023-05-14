@@ -1,4 +1,5 @@
 const User = require("../../model/user.js");
+const functions = require("../../structs/functions.js");
 const fs = require("fs");
 const config = JSON.parse(fs.readFileSync("./Config/config.json").toString());
 
@@ -38,6 +39,8 @@ module.exports = {
             let xmppClient = global.Clients.find(client => client.accountId == targetUser.accountId);
             if (xmppClient) xmppClient.client.close();
         }
+
+        if (accessToken != -1 || refreshToken != -1) functions.UpdateTokens();
 
         interaction.editReply({ content: `Successfully banned ${targetUser.username}`, ephemeral: true });
     }

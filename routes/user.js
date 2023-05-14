@@ -56,7 +56,7 @@ app.get("/account/api/public/account/displayName/:displayName", async (req, res)
 });
 
 app.get("/persona/api/public/account/lookup", async (req, res) => {
-    if (typeof req.query.q != "string") return error.createError(
+    if (typeof req.query.q != "string" || !req.query.q) return error.createError(
         "errors.com.epicgames.bad_request",
         "Required String parameter 'q' is invalid or not present", 
         undefined, 1001, undefined, 400, res
@@ -79,7 +79,7 @@ app.get("/persona/api/public/account/lookup", async (req, res) => {
 app.get("/api/v1/search/:accountId", async (req, res) => {
     let response = [];
 
-    if (typeof req.query.prefix != "string") return error.createError(
+    if (typeof req.query.prefix != "string" || !req.query.prefix) return error.createError(
         "errors.com.epicgames.bad_request",
         "Required String parameter 'prefix' is invalid or not present", 
         undefined, 1001, undefined, 400, res

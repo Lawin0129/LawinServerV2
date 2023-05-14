@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const User = require("../model/user.js");
+const functions = require("../structs/functions.js");
 const error = require("../structs/error.js");
 
 async function verifyToken(req, res, next) {
@@ -15,9 +16,13 @@ async function verifyToken(req, res, next) {
     const token = req.headers["authorization"].replace("bearer eg1~", "");
 
     try {
-        const decodedToken = jwt.verify(token, global.JWT_SECRET);
+        const decodedToken = jwt.decode(token);
 
         if (!global.accessTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
+
+        if (DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).getTime() <= new Date().getTime()) {
+            throw new Error("Expired access token.");
+        }
 
         req.user = await User.findOne({ accountId: decodedToken.sub }).lean();
 
@@ -30,7 +35,11 @@ async function verifyToken(req, res, next) {
         next();
     } catch {
         let accessIndex = global.accessTokens.findIndex(i => i.token == `eg1~${token}`);
-        if (accessIndex != -1) global.accessTokens.splice(accessIndex, 1);
+        if (accessIndex != -1) {
+            global.accessTokens.splice(accessIndex, 1);
+
+            functions.UpdateTokens();
+        }
         
         return authErr();
     }
@@ -48,11 +57,15 @@ async function verifyClient(req, res, next) {
     const token = req.headers["authorization"].replace("bearer eg1~", "");
 
     try {
-        const decodedToken = jwt.verify(token, global.JWT_SECRET);
+        const decodedToken = jwt.decode(token);
 
         let findAccess = global.accessTokens.find(i => i.token == `eg1~${token}`);
 
         if (!findAccess && !global.clientTokens.find(i => i.token == `eg1~${token}`)) throw new Error("Invalid token.");
+
+        if (DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).getTime() <= new Date().getTime()) {
+            throw new Error("Expired access/client token.");
+        }
 
         if (findAccess) {
             req.user = await User.findOne({ accountId: decodedToken.sub }).lean();
@@ -71,9 +84,18 @@ async function verifyClient(req, res, next) {
 
         let clientIndex = global.clientTokens.findIndex(i => i.token == `eg1~${token}`);
         if (clientIndex != -1) global.clientTokens.splice(clientIndex, 1);
+
+        if (accessIndex != -1 || clientIndex != -1) functions.UpdateTokens();
         
         return authErr();
     }
+}
+
+function DateAddHours(pdate, number) {
+    let date = pdate;
+    date.setHours(date.getHours() + number);
+
+    return date;
 }
 
 module.exports = {

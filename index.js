@@ -3,6 +3,7 @@ const app = express();
 const mongoose = require("mongoose");
 const fs = require("fs");
 const rateLimit = require("express-rate-limit");
+const jwt = require("jsonwebtoken");
 const config = JSON.parse(fs.readFileSync("./Config/config.json").toString());
 
 const log = require("./structs/log.js");
@@ -14,9 +15,23 @@ if (!fs.existsSync("./ClientSettings")) fs.mkdirSync("./ClientSettings");
 global.JWT_SECRET = functions.MakeID();
 const PORT = 8080;
 
-global.accessTokens = [];
-global.refreshTokens = [];
-global.clientTokens = [];
+const tokens = JSON.parse(fs.readFileSync("./tokenManager/tokens.json").toString());
+
+for (let tokenType in tokens) {
+    for (let tokenIndex in tokens[tokenType]) {
+        let decodedToken = jwt.decode(tokens[tokenType][tokenIndex].token.replace("eg1~", ""));
+
+        if (DateAddHours(new Date(decodedToken.creation_date), decodedToken.hours_expire).getTime() <= new Date().getTime()) {
+            tokens[tokenType].splice(Number(tokenIndex), 1);
+        }
+    }
+}
+
+fs.writeFileSync("./tokenManager/tokens.json", JSON.stringify(tokens, null, 2));
+
+global.accessTokens = tokens.accessTokens;
+global.refreshTokens = tokens.refreshTokens;
+global.clientTokens = tokens.clientTokens;
 
 global.exchangeCodes = [];
 
@@ -58,3 +73,10 @@ app.use((req, res, next) => {
         undefined, 1004, undefined, 404, res
     );
 });
+
+function DateAddHours(pdate, number) {
+    let date = pdate;
+    date.setHours(date.getHours() + number);
+
+    return date;
+}
