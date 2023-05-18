@@ -18,6 +18,7 @@
 * Item Shop:
     + Customizable Item Shop.
     + Purchasing items from the Item Shop.
+    + Gifting items to your friends.
 ### XMPP Features
 - Parties (builds 3.5 to 14.50).
 - Chat (whispering, global chat, party chat).
