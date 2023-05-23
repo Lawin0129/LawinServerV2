@@ -1,7 +1,7 @@
 {
   "created": "",
   "updated": "",
-  "rvn": 0,
+  "rvn": 1,
   "wipeNumber": 1,
   "accountId": "",
   "profileId": "athena",
@@ -65380,7 +65380,7 @@
         ""
       ],
       "inventory_limit_bonus": 0,
-      "last_applied_loadout": "",
+      "last_applied_loadout": "lawin-loadout",
       "favorite_skydivecontrail": "",
       "favorite_pickaxe": "AthenaPickaxe:defaultpickaxe",
       "favorite_glider": "AthenaGlider:defaultglider",
