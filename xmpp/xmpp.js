@@ -61,7 +61,7 @@ wss.on('connection', async (ws) => {
     let token = "";
     let jid = "";
     let resource = "";
-    let ID = functions.MakeID();
+    let ID = "";
     let Authenticated = false;
     let clientExists = false;
     let connectionClosed = false;
@@ -74,6 +74,8 @@ wss.on('connection', async (ws) => {
 
         switch (msg.root.name) {
             case "open":
+                if (!ID) ID = functions.MakeID();
+
                 ws.send(XMLBuilder.create("open")
                 .attribute("xmlns", "urn:ietf:params:xml:ns:xmpp-framing")
                 .attribute("from", domain)
@@ -102,6 +104,7 @@ wss.on('connection', async (ws) => {
             break;
 
             case "auth":
+                if (!ID) return;
                 if (accountId) return;
                 if (!msg.root.content) return Error(ws);
                 if (!functions.DecodeBase64(msg.root.content).includes("\u0000")) return Error(ws);
@@ -129,6 +132,8 @@ wss.on('connection', async (ws) => {
             break;
 
             case "iq":
+                if (!ID) return;
+                
                 switch (msg.root.attributes.id) {
                     case "_xmpp_bind1":
                         if (resource || !accountId) return;
