@@ -15,6 +15,8 @@
     + Accepting friend requests.
     + Removing friends.
     + Blocking friends.
+    + Setting nicknames.
+    + Removing nicknames.
 * Item Shop:
     + Customizable Item Shop.
     + Purchasing items from the Item Shop.
