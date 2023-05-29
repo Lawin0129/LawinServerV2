@@ -172,7 +172,18 @@ app.get("/friends/api/public/blocklist/*", verifyToken, async (req, res) => {
 
 app.all("/friends/api/v1/*/friends/:friendId/alias", verifyToken, getRawBody, async (req, res) => {
     let friends = await Friends.findOne({ accountId: req.user.accountId }).lean();
-    const aliasPattern = /[\p{LD} \-_.'\u2018\u2019]+/gu;
+
+    let validationFail = () => error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        "Validation Failed. Invalid fields were [alias]", 
+        ["[alias]"], 1040, undefined, 404, res
+    );
+
+    const allowedCharacters = (" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split("");
+    
+    for (let character of req.rawBody) {
+        if (!allowedCharacters.includes(character)) return validationFail();
+    }
 
     if (!friends.list.accepted.find(i => i.accountId == req.params.friendId)) return error.createError(
         "errors.com.epicgames.friends.friendship_not_found",
@@ -184,11 +195,7 @@ app.all("/friends/api/v1/*/friends/:friendId/alias", verifyToken, getRawBody, as
 
     switch (req.method) {
         case "PUT":
-            if (!(aliasPattern.test(req.rawBody)) || (req.rawBody < 3) || (req.rawBody > 16)) return error.createError(
-                "errors.com.epicgames.validation.validation_failed",
-                "Validation Failed. Invalid fields were [alias]", 
-                ["[alias]"], 1040, undefined, 404, res
-            );
+            if ((req.rawBody < 3) || (req.rawBody > 16)) return validationFail();
             
             friends.list.accepted[friendIndex].alias = req.rawBody;
             
