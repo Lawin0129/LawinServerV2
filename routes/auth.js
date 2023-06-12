@@ -269,6 +269,95 @@ app.delete("/account/api/oauth/sessions/kill/:token", (req, res) => {
     res.status(204).end();
 });
 
+app.post("/auth/v1/oauth/token", async (req, res) => {
+    res.json({
+        access_token: "lawinsaccesstokenlol",
+        token_type: "bearer",
+        expires_at: "9999-12-31T23:59:59.999Z",
+        features: [
+            "AntiCheat",
+            "Connect",
+            "Ecom"
+        ],
+        organization_id: "lawinsorganizationidlol",
+        product_id: "prod-fn",
+        sandbox_id: "fn",
+        deployment_id: "lawinsdeploymentidlol",
+        expires_in: 3599
+    });
+})
+
+app.post("/epic/oauth/v2/token", async (req, res) => {
+    let clientId;
+
+    try {
+        clientId = functions.DecodeBase64(req.headers["authorization"].split(" ")[1]).split(":");
+
+        if (!clientId[1]) throw new Error("invalid client id");
+
+        clientId = clientId[0];
+    } catch {
+        return error.createError(
+            "errors.com.epicgames.common.oauth.invalid_client",
+            "It appears that your Authorization header may be invalid or not present, please verify that you are sending the correct headers.", 
+            [], 1011, "invalid_client", 400, res
+        );
+    }
+
+    if (!req.body.refresh_token) return error.createError(
+        "errors.com.epicgames.common.oauth.invalid_request",
+        "Refresh token is required.", 
+        [], 1013, "invalid_request", 400, res
+    );
+
+    const refresh_token = req.body.refresh_token;
+
+    let refreshToken = global.refreshTokens.findIndex(i => i.token == refresh_token);
+    let object = global.refreshTokens[refreshToken];
+
+    try {
+        if (refreshToken == -1) throw new Error("Refresh token invalid.");
+        let decodedRefreshToken = jwt.decode(refresh_token.replace("eg1~", ""));
+
+        if (DateAddHours(new Date(decodedRefreshToken.creation_date), decodedRefreshToken.hours_expire).getTime() <= new Date().getTime()) {
+            throw new Error("Expired refresh token.");
+        }
+    } catch {
+        if (refreshToken != -1) {
+            global.refreshTokens.splice(refreshToken, 1);
+
+            functions.UpdateTokens();
+        }
+
+        error.createError(
+            "errors.com.epicgames.account.auth_token.invalid_refresh_token",
+            `Sorry the refresh token '${refresh_token}' is invalid`, 
+            [refresh_token], 18036, "invalid_grant", 400, res
+        );
+
+        return;
+    }
+
+    req.user = await User.findOne({ accountId: object.accountId }).lean();
+
+    res.json({
+        scope: req.body.scope || "basic_profile friends_list openid presence",
+        token_type: "bearer",
+        access_token: "lawinsaccesstokenlol",
+        refresh_token: "lawinsrefreshtokenlol",
+        id_token: "lawinsidtokenlol",
+        expires_in: 7200,
+        expires_at: "9999-12-31T23:59:59.999Z",
+        refresh_expires_in: 28800,
+        refresh_expires_at: "9999-12-31T23:59:59.999Z",
+        account_id: req.user.accountId,
+        client_id: clientId,
+        application_id: "lawinsacpplicationidlol",
+        selected_account_id: req.user.accountId,
+        merged_accounts: []
+    });
+})
+
 function DateAddHours(pdate, number) {
     let date = pdate;
     date.setHours(date.getHours() + number);

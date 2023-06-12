@@ -130,6 +130,31 @@ app.get("/account/api/public/account/:accountId", verifyToken, (req, res) => {
     });
 });
 
+app.get("/sdk/v1/*", (req, res) => {
+    const sdk = require("./../responses/sdkv1.json");
+    res.json(sdk);
+})
+
+app.get("/epic/id/v2/sdk/accounts", async (req, res) => {
+    let user = await User.findOne({ accountId: req.query.accountId, banned: false }).lean();
+    if (!user) return error.createError(
+        "errors.com.epicgames.account.account_not_found",
+        `Sorry, we couldn't find an account for ${req.query.accountId}`, 
+        [req.query.accountId], 18007, undefined, 404, res
+    );
+    res.json([{
+        accountId: user.accountId,
+        displayName: user.username,
+        preferredLanguage: "en",
+        cabinedMode: false,
+        empty: false
+    }]);
+})
+
+app.all("/v1/epic-settings/public/users/*/values", (req, res) => {
+    res.json({});
+})
+
 app.get("/account/api/public/account/*/externalAuths", (req, res) => {
     res.json([]);
 });

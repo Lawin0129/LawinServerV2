@@ -1,6 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const app = express.Router();
+const path = require("path");
 
 const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 
@@ -28,6 +29,54 @@ app.get("/launcher/api/public/distributionpoints/", (req, res) => {
         ]
     });
 });
+
+app.get("/launcher/api/public/assets/*", async (req, res) => {
+    res.json({
+        "appName": "FortniteContentBuilds",
+        "labelName": "LawinServer",
+        "buildVersion": "++Fortnite+Release-20.00-CL-19458861-Windows",
+        "catalogItemId": "5cb97847cee34581afdbc445400e2f77",
+        "expires": "9999-12-31T23:59:59.999Z",
+        "items": {
+            "MANIFEST": {
+                "signature": "LawinServer",
+                "distribution": "https://lawinserver.ol.epicgames.com/",
+                "path": "Builds/Fortnite/Content/CloudDir/LawinServer.manifest",
+                "hash": "55bb954f5596cadbe03693e1c06ca73368d427f3",
+                "additionalDistributions": []
+            },
+            "CHUNKS": {
+                "signature": "LawinServer",
+                "distribution": "https://lawinserver.ol.epicgames.com/",
+                "path": "Builds/Fortnite/Content/CloudDir/LawinServer.manifest",
+                "additionalDistributions": []
+            }
+        },
+        "assetId": "FortniteContentBuilds"
+    });
+})
+
+app.get("/Builds/Fortnite/Content/CloudDir/*.manifest", async (req, res) => {
+    res.set("Content-Type", "application/octet-stream")
+
+    const manifest = fs.readFileSync(path.join(__dirname, "..", "responses", "CloudDir", "LawinServer.manifest"));
+
+    res.status(200).send(manifest).end();
+})
+
+app.get("/Builds/Fortnite/Content/CloudDir/*.chunk", async (req, res) => {
+    res.set("Content-Type", "application/octet-stream")
+
+    const chunk = fs.readFileSync(path.join(__dirname, "..", "responses", "CloudDir", "LawinServer.chunk"));
+
+    res.status(200).send(chunk).end();
+})
+
+app.get("/Builds/Fortnite/Content/CloudDir/*.ini", async (req, res) => {
+    const ini = fs.readFileSync(path.join(__dirname, "..", "responses", "CloudDir", "Full.ini"));
+
+    res.status(200).send(ini).end();
+})
 
 app.get("/waitingroom/api/waitingroom", (req, res) => {
     res.status(204);
