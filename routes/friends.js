@@ -20,6 +20,48 @@ app.get("/friends/api/public/list/fortnite/*/recentPlayers", (req, res) => {
     res.json([]);
 });
 
+app.all("/friends/api/v1/*/friends/:friendId/alias", verifyToken, getRawBody, async (req, res) => {
+    let friends = await Friends.findOne({ accountId: req.user.accountId });
+
+    let validationFail = () => error.createError(
+        "errors.com.epicgames.validation.validation_failed",
+        "Validation Failed. Invalid fields were [alias]", 
+        ["[alias]"], 1040, undefined, 404, res
+    );
+
+    const allowedCharacters = (" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split("");
+    
+    for (let character of req.rawBody) {
+        if (!allowedCharacters.includes(character)) return validationFail();
+    }
+
+    if (!friends.list.accepted.find(i => i.accountId == req.params.friendId)) return error.createError(
+        "errors.com.epicgames.friends.friendship_not_found",
+        `Friendship between ${req.user.accountId} and ${req.params.friendId} does not exist`, 
+        [req.user.accountId,req.params.friendId], 14004, undefined, 404, res
+    );
+
+    const friendIndex = friends.list.accepted.findIndex(i => i.accountId == req.params.friendId);
+
+    switch (req.method) {
+        case "PUT":
+            if ((req.rawBody < 3) || (req.rawBody > 16)) return validationFail();
+            
+            friends.list.accepted[friendIndex].alias = req.rawBody;
+            
+            await friends.updateOne({ $set: { list: friends.list } });
+        break;
+
+        case "DELETE":
+            friends.list.accepted[friendIndex].alias = "";
+            
+            await friends.updateOne({ $set: { list: friends.list } });
+        break;
+    }
+
+    res.status(204).end();
+});
+
 app.get("/friends/api/public/friends/:accountId", verifyToken, async (req, res) => {
     let response = [];
 
@@ -168,48 +210,6 @@ app.get("/friends/api/public/blocklist/*", verifyToken, async (req, res) => {
     res.json({
         "blockedUsers": friends.list.blocked.map(i => i.accountId)
     });
-});
-
-app.all("/friends/api/v1/*/friends/:friendId/alias", verifyToken, getRawBody, async (req, res) => {
-    let friends = await Friends.findOne({ accountId: req.user.accountId }).lean();
-
-    let validationFail = () => error.createError(
-        "errors.com.epicgames.validation.validation_failed",
-        "Validation Failed. Invalid fields were [alias]", 
-        ["[alias]"], 1040, undefined, 404, res
-    );
-
-    const allowedCharacters = (" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split("");
-    
-    for (let character of req.rawBody) {
-        if (!allowedCharacters.includes(character)) return validationFail();
-    }
-
-    if (!friends.list.accepted.find(i => i.accountId == req.params.friendId)) return error.createError(
-        "errors.com.epicgames.friends.friendship_not_found",
-        `Friendship between ${req.user.accountId} and ${req.params.friendId} does not exist`, 
-        [req.user.accountId,req.params.friendId], 14004, undefined, 404, res
-    );
-
-    const friendIndex = friends.list.accepted.findIndex(i => i.accountId == req.params.friendId);
-
-    switch (req.method) {
-        case "PUT":
-            if ((req.rawBody < 3) || (req.rawBody > 16)) return validationFail();
-            
-            friends.list.accepted[friendIndex].alias = req.rawBody;
-            
-            await friends.updateOne({ $set: { list: friends.list } });
-        break;
-
-        case "DELETE":
-            friends.list.accepted[friendIndex].alias = "";
-            
-            await friends.updateOne({ $set: { list: friends.list } });
-        break;
-    }
-
-    res.status(204).end();
 });
 
 function getRawBody(req, res, next) {

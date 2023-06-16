@@ -222,7 +222,7 @@ function sendXmppMessageToAll(body) {
 
     global.Clients.forEach(ClientData => {
         ClientData.client.send(XMLBuilder.create("message")
-        .attribute("from", "xmpp-admin@prod.ol.epicgames.com")
+        .attribute("from", `xmpp-admin@${global.xmppDomain}`)
         .attribute("xmlns", "jabber:client")
         .attribute("to", ClientData.jid)
         .element("body", `${body}`).up().toString());
@@ -237,7 +237,7 @@ function sendXmppMessageToId(body, toAccountId) {
     if (!receiver) return;
 
     receiver.client.send(XMLBuilder.create("message")
-    .attribute("from", "xmpp-admin@prod.ol.epicgames.com")
+    .attribute("from", `xmpp-admin@${global.xmppDomain}`)
     .attribute("to", receiver.jid)
     .attribute("xmlns", "jabber:client")
     .element("body", `${body}`).up().toString());
