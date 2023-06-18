@@ -42,6 +42,9 @@ app.get("/fortnite/api/calendar/v1/timeline", (req, res) => {
                         weeklyStoreEnd: "9999-01-01T00:00:00Z",
                         stwEventStoreEnd: "9999-01-01T00:00:00.000Z",
                         stwWeeklyStoreEnd: "9999-01-01T00:00:00.000Z",
+                        sectionStoreEnds: {
+                            Featured: "9999-01-01T00:00:00.000Z"
+                        },
                         dailyStoreEnd: "9999-01-01T00:00:00Z"
                     }
                 }],
