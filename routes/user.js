@@ -126,7 +126,9 @@ app.get("/account/api/public/account/:accountId", verifyToken, (req, res) => {
         emailVerified: true,
         minorVerified: false,
         minorExpected: false,
-        minorStatus: "UNKNOWN"
+        minorStatus: "NOT_MINOR",
+        cabinedMode: false,
+        hasHashedEmail: false
     });
 });
 
