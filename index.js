@@ -35,7 +35,7 @@ global.clientTokens = tokens.clientTokens;
 
 global.exchangeCodes = [];
 
-mongoose.set('strictQuery', true);
+mongoose.set('strictQuery', false);
 
 mongoose.connect(config.mongodb.database, () => {
     log.backend("App successfully connected to MongoDB!");
