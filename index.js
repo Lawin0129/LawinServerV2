@@ -68,7 +68,13 @@ app.listen(PORT, () => {
 });
 
 // if endpoint not found, return this error
+const loggedUrls = new Set();
 app.use((req, res, next) => {
+    const url = req.originalUrl;
+    if (loggedUrls.has(url)) {
+        return next();
+    }
+    console.log(`Missing endpoint: ${req.method} ${url} request port ${req.socket.localPort}`)
     error.createError(
         "errors.com.epicgames.common.not_found", 
         "Sorry the resource you were trying to find could not be found", 
