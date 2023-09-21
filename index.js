@@ -58,7 +58,9 @@ app.listen(PORT, () => {
     log.backend(`App started listening on port ${PORT}`);
 
     require("./xmpp/xmpp.js");
+    if(config.discord.useDiscordBot === true) {
     require("./DiscordBot");
+    };
 }).on("error", async (err) => {
     if (err.code == "EADDRINUSE") {
         log.error(`Port ${PORT} is already in use!\nClosing in 3 seconds...`);
