@@ -22,8 +22,8 @@ app.get("/fortnite/api/game/v2/matchmakingservice/ticket/player/*", verifyToken,
     res.json({
         "serviceUrl": `ws://${config.matchmakerIP}`,
         "ticketType": "mms-player",
-        "payload": "69=",
-        "signature": "420="
+        "payload": "${req.user.matchmakingId}",
+        "signature": "account"
     });
     res.end();
 });

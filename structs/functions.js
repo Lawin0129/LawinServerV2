@@ -280,6 +280,7 @@ async function registerUser(discordId, username, email, plainPassword) {
     if (await User.findOne({ discordId })) return { message: "You already created an account!", status: 400 };
 
     const accountId = MakeID().replace(/-/ig, "");
+    const matchmakingId = MakeID().replace(/-/ig, "");
 
     // filters
     const emailFilter = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
@@ -298,7 +299,7 @@ async function registerUser(discordId, username, email, plainPassword) {
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     try {
-        await User.create({ created: new Date().toISOString(), discordId, accountId, username, username_lower: username.toLowerCase(), email, password: hashedPassword }).then(async (i) => {
+        await User.create({ created: new Date().toISOString(), discordId, accountId, username, username_lower: username.toLowerCase(), email, password: hashedPassword, matchmakingId }).then(async (i) => {
             await Profile.create({ created: i.created, accountId: i.accountId, profiles: profileManager.createProfiles(i.accountId) });
             await Friends.create({ created: i.created, accountId: i.accountId });
         });
