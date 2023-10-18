@@ -14,6 +14,7 @@ app.get("/fortnite/api/matchmaking/session/findPlayer/*", (req, res) => {
 app.get("/fortnite/api/game/v2/matchmakingservice/ticket/player/*", verifyToken, (req, res) => {
     if (typeof req.query.bucketId != "string") return res.status(400).end();
     if (req.query.bucketId.split(":").length != 4) return res.status(400).end();
+    if (req.user.isServer == true) return res.status(403).end();
 
     buildUniqueId[req.user.accountId] = req.query.bucketId.split(":")[0];
 

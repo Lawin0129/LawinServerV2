@@ -11,6 +11,7 @@ const UserSchema = new mongoose.Schema(
         email: { type: String, required: true, unique: true },
         password: { type: String, required: true },
         matchmakingId: { type: String, required: true, unique: true},
+        isServer: { type: Boolean, default: false}
     },
     {
         collection: "users"
