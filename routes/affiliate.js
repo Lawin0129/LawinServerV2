@@ -7,9 +7,10 @@ const Profile = require("../model/profiles.js");
 const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 
 app.get("/affiliate/api/public/affiliates/slug/:slug", async (req, res) => {
-    var slug = (req.params.slug.toLowerCase())
+    var slug = (req.params.slug)
+    var lccode = (slug.toLowerCase())
 
-    const code = (await codes.findOne({code_lower: slug}))  
+    const code = (await codes.findOne({code_lower: lccode}))  
 
     var ValidCode = null;
 
@@ -18,9 +19,9 @@ app.get("/affiliate/api/public/affiliates/slug/:slug", async (req, res) => {
 
     if ( ValidCode == true ) {
     return res.json({
-        "id": code.code_lower,
-        "slug": code.code_lower,
-        "displayName": code.code_lower,
+        "id": code.code,
+        "slug": code.code,
+        "displayName": code.code,
         "status": "ACTIVE",
         "verified": false
         });
@@ -41,10 +42,10 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetAffiliateName", verifyToken,
     var QueryRevision = req.query.rvn || -1;
     var StatChanged = false;
 
+    var slug = (req.body.affiliateName)
+    var lccode = (slug.toLowerCase());
 
-    var slug = (req.body.affiliateName.toLowerCase());
-
-    const code = (await codes.findOne({code_lower: slug}))  
+    const code = (await codes.findOne({code_lower: lccode}))  
 
     if (code == null) {        
         res.status(404);
@@ -52,7 +53,7 @@ app.post("/fortnite/api/game/v2/profile/*/client/SetAffiliateName", verifyToken,
     }
 
     profile.stats.attributes.mtx_affiliate_set_time = new Date().toISOString();
-    profile.stats.attributes.mtx_affiliate = code.code_lower;
+    profile.stats.attributes.mtx_affiliate = code.code;
 
     StatChanged = true;
 
