@@ -47,6 +47,12 @@ app.get("/account/api/public/account/displayName/:displayName", async (req, res)
         `Sorry, we couldn't find an account for ${req.params.displayName}`, 
         [req.params.displayName], 18007, undefined, 404, res
     );
+
+    if(user.isServer == true) return error.createError(
+        "errors.com.epicgames.account.account_not_found",
+        `Sorry, we couldn't find an account for ${req.params.displayName}`, 
+        [req.params.displayName], 18007, undefined, 404, res
+    );
     
     res.json({
         id: user.accountId,
