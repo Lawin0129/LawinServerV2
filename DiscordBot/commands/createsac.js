@@ -1,7 +1,7 @@
 const { MessageEmbed } = require("discord.js");
 const functions = require("../../structs/functions.js");
 const fs = require("fs");
-const config = require("../../Config/config.js");
+const config = require("../../Config/config.json");
 
 module.exports = {
     commandInfo: {
