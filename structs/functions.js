@@ -320,7 +320,7 @@ async function createSAC(code, accountId, creator) {
     const accountIdprofile = (await User.findOne({ accountId }))
     if (accountIdprofile === null) return { message: "That User dosent exist!", status: 400};
 
-    if (await SaCCodes.findOne({ accountId })) return { message: "That User already has an Code!", status: 400};
+    if (await SaCCodes.findOne({ owner: accountId })) return { message: "That User already has an Code!", status: 400};
     const creatorprofile = (await User.findOne({ discordId: creator }))
 
     const allowedCharacters = ("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split("");
