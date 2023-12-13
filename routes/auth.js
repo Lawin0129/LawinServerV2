@@ -63,7 +63,7 @@ app.post("/account/api/oauth/token", async (req, res) => {
 
             let err = () => error.createError(
                 "errors.com.epicgames.account.invalid_account_credentials",
-                "Your e-mail and/or password are incorrect. Please check them and try again.", 
+                "Your credentials are incorrect. Please check them and try again.", 
                 [], 18031, "invalid_grant", 400, res
             );
 
@@ -114,7 +114,7 @@ app.post("/account/api/oauth/token", async (req, res) => {
         case "exchange_code":
             if (!req.body.exchange_code) return error.createError(
                 "errors.com.epicgames.common.oauth.invalid_request",
-                "Exchange code is required.", 
+                "OTP code is required.", 
                 [], 1013, "invalid_request", 400, res
             );
 
@@ -125,7 +125,7 @@ app.post("/account/api/oauth/token", async (req, res) => {
 
             if (index == -1) return error.createError(
                 "errors.com.epicgames.account.oauth.exchange_code_not_found",
-                "Sorry the exchange code you supplied was not found. It is possible that it was no longer valid", 
+                "Sorry the OTP code you supplied was not found. It is possible that it was no longer valid", 
                 [], 18057, "invalid_grant", 400, res
             );
 
