@@ -4,8 +4,8 @@ const functions = require("../../structs/functions.js");
 
 module.exports = {
     commandInfo: {
-        name: "exchange-code",
-        description: "Generates an exchange code for login. (One time use and expires after 5 mins if unused)."
+        name: "otp-code",
+        description: "Generates an One Time Password (OTP) for login. (One time use and expires after 5 mins if unused)."
     },
     execute: async (interaction) => {
         await interaction.deferReply({ ephemeral: true });
@@ -31,10 +31,10 @@ module.exports = {
         .setColor("#56ff00")
         .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
         .setFields(
-            { name: "Exchange Code", value: exchange_code }
+            { name: "OTP Code", value: exchange_code },
         )
         .setTimestamp()
 
-        interaction.editReply({ content: "Successfully generated an exchange code.", embeds: [embed], ephemeral: true });
+        interaction.editReply({ content: "Successfully generated an OTP code.", embeds: [embed], ephemeral: true });
     }
 }
