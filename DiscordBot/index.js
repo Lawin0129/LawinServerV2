@@ -6,7 +6,7 @@ const config = JSON.parse(fs.readFileSync("./Config/config.json").toString());
 const log = require("../structs/log.js");
 
 client.once("ready", () => {
-    log.bot("Bot is up and running!");
+    log.bot("Discord Bot is online!");
 
     let commands = client.application.commands;
 
