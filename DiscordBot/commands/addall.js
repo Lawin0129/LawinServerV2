@@ -14,6 +14,7 @@ export const data = new SlashCommandBuilder()
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .setDMPermission(false);
 export async function execute(interaction) {
+            if (!config.moderators.includes(interaction.user.id)) return interaction.editReply({ content: "You do not have moderator permissions.", ephemeral: true });
     const __dirname = dirname(import.meta);
     const selectedUser = interaction.options.getUser('user');
     const selectedUserId = selectedUser?.id;
@@ -31,5 +32,8 @@ export async function execute(interaction) {
             console.log(err);
     });
     await interaction.reply({ content: "Successfully added all skins to the selected account", ephemeral: true });
+}
+ 
+}
 }
 //# sourceMappingURL=addall.js.map
