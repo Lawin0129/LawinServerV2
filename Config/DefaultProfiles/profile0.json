@@ -12,7 +12,7 @@
       "attributes": {
         "platform": "Shared"
       },
-      "quantity": 1000000
+      "quantity": 0
     },
     "HomebaseBannerColor:DefaultColor1": {
       "templateId": "HomebaseBannerColor:DefaultColor1",
