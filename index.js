@@ -28,6 +28,13 @@ for (let tokenType in tokens) {
 }
 
 fs.writeFileSync("./tokenManager/tokens.json", JSON.stringify(tokens, null, 2));
+log.backend(" ▄▄▄     ▄▄▄▄▄▄ ▄     ▄ ▄▄▄ ▄▄    ▄    ▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄ ▄▄▄▄▄▄   ▄▄   ▄▄ ▄▄▄▄▄▄▄ ▄▄▄▄▄▄      ▄▄   ▄▄ ▄▄▄▄▄▄▄ ");
+log.backend("█   █   █      █ █ ▄ █ █   █  █  █ █  █       █       █   ▄  █ █  █ █  █       █   ▄  █    █  █ █  █       █");
+log.backend("█   █   █  ▄   █ ██ ██ █   █   █▄█ █  █  ▄▄▄▄▄█    ▄▄▄█  █ █ █ █  █▄█  █    ▄▄▄█  █ █ █    █  █▄█  █▄▄▄▄   █");
+log.backend("█   █   █ █▄█  █       █   █       █  █ █▄▄▄▄▄█   █▄▄▄█   █▄▄█▄█       █   █▄▄▄█   █▄▄█▄   █       █▄▄▄▄█  █");
+log.backend("█   █▄▄▄█      █       █   █  ▄    █  █▄▄▄▄▄  █    ▄▄▄█    ▄▄  █       █    ▄▄▄█    ▄▄  █  █       █ ▄▄▄▄▄▄█");
+log.backend("█       █  ▄   █   ▄   █   █ █ █   █   ▄▄▄▄▄█ █   █▄▄▄█   █  █ ██     ██   █▄▄▄█   █  █ █   █     ██ █▄▄▄▄▄ ");
+log.backend("█▄▄▄▄▄▄▄█▄█ █▄▄█▄▄█ █▄▄█▄▄▄█▄█  █▄▄█  █▄▄▄▄▄▄▄█▄▄▄▄▄▄▄█▄▄▄█  █▄█ █▄▄▄█ █▄▄▄▄▄▄▄█▄▄▄█  █▄█    █▄▄▄█ █▄▄▄▄▄▄▄█");
 
 global.accessTokens = tokens.accessTokens;
 global.refreshTokens = tokens.refreshTokens;
