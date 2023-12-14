@@ -36,7 +36,7 @@ LawinServer V2 is a fortnite backend written in Node.js that features an account
 - `/create {email} {username} {password}` - Creates an account on the backend (Each user can only create 1 account).
 - `/details` - Retrieves your account info.
 - `/lookup {username}` - Retrieves someones account info.
-- `/otp-code` - Generates a One Time Password (OTP) for login. (One time use for each code and if not used it expires after 5 mins).
+- `/otp-code` - Generates a One Time Password (OTP) for login. (If not used it expires after 5 mins).
 - `/change-username {newUsername}` - You can change your username using this command.
 - `/change-password {newPassword}` - You can change your password using this command.
 - `/sign-out-of-all-sessions` - Signs you out of the game if you have an active session.
@@ -67,7 +67,7 @@ You are allowed to host for others, however please credit [me](https://github.co
 5) Open it, set your discord bot token (DO **NOT EVER** SHARE THIS TOKEN) and save it. The discord bot will be used for creating accounts and managing your account.
 6) Run "start.bat", if there is no errors, it should work.
 7) Use something to redirect the Fortnite servers to `localhost:8080` (working fiddler script below)
-8) When Fortnite launches and is connected to the backend, enter your email and password (or launch with an exchange code) then press login. It should let you in and everything should be working fine.
+8) When Fortnite launches and is connected to the backend, enter your email and password (or launch with an OTP code) then press login. It should let you in and everything should be working fine.
 
 ## What is the most effective Fiddler script?
 
@@ -97,3 +97,12 @@ class Handlers
     }
 }
 ```
+
+# Credits
+[Lawin0129](https://github.com/Lawin0129) - Original LawinServerV2 Code
+
+[PRO100KatYT](https://github.com/PRO100KatYT) - Contributor
+
+[secret-pommes](https://github.com/secret-pommes)- Contributor
+
+[OptiX YT](https://codeberg.org/optixyt) - Contributor
