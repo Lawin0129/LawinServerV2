@@ -1,7 +1,7 @@
 <img style="vertical-align: middle;" src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.Zs2Ec_WFJI4UGASq9IuYJAHaHa%26pid%3DApi&f=1&ipt=a271582403e961978ce0ed2d5203f75c56a8f456a046f3fb89952c4bfe0691b0&ipo=images" width="120" height="120" align="left">
 
 # LawinServerV2
-LawinServer V2 is a fortnite backend written in Node.js that features an account system, xmpp and a locker system.</br>[Lawin YouTube](https://www.youtube.com/channel/UCiq0PARLj_e_Nqjc_nIv-Eg) · [Issue Tracker](https://github.com/Lawin0129/LawinServerV2/issues) · [Install Backend](#install)
+LawinServer V2 is a fortnite backend written in Node.js that features an account system, xmpp and a locker.</br>[Lawin YouTube](https://www.youtube.com/channel/UCiq0PARLj_e_Nqjc_nIv-Eg) · [Issue Tracker](https://github.com/Lawin0129/LawinServerV2/issues) · [Install Backend](#install)
 
 
 ## Features
