@@ -38,9 +38,20 @@ function error() {
     console.log(`\x1b[31mERROR\x1b[0m: ${msg}`);
 }
 
+function startup() {
+    let msg = "";
+
+    for (let i in error.arguments) {
+        msg += `${i == "0" ? "" : " "}${error.arguments[i]}`;
+    }
+
+    console.log(`${msg}`);
+}
+
 module.exports = {
     backend,
     bot,
     xmpp,
-    error
+    error,
+    startup
 }
