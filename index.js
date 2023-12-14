@@ -43,7 +43,7 @@ global.clientTokens = tokens.clientTokens;
 global.exchangeCodes = [];
 
 mongoose.connect(config.mongodb.database, () => {
-    log.backend("App successfully connected to MongoDB!");
+    log.backend("Backend successfully connected to MongoDB!");
 });
 
 mongoose.connection.on("error", err => {
@@ -67,7 +67,7 @@ app.get("/unknown", (req, res) => {
 
 
 app.listen(PORT, () => {
-    log.backend(`App started listening on port ${PORT}`);
+    log.backend(`LawinServerV2 started listening on port ${PORT}`);
 
     require("./xmpp/xmpp.js");
     require("./DiscordBot");
