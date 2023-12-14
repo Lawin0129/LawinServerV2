@@ -61,7 +61,7 @@ LawinServerV2 is a Fortnite backend created by [Lawin0129](https://github.com/La
 4) You can set multiple moderators like this `["discordId","discordId2"]`.
 
 ## Using LawinServerV2 for a project
-You are allowed to host for others, however please credit [me](https://github.com/Lawin0129) and don't remove my credits from `responses/contentpages.json`.
+You are allowed to host for others, however please credit [Lawin](https://github.com/Lawin0129) and don't remove my credits from `responses/contentpages.json`.
 
 ## Install
 
