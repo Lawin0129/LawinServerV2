@@ -28,7 +28,7 @@ export async function execute(interaction) {
         .setDescription("This action is irreversible, and will delete all your data.")
         .setColor("#2b2d31")
         .setFooter({
-        text: "Momentum",
+        text: "LawinServerV2",
         iconURL: "https://cdn.discordapp.com/app-assets/432980957394370572/1084188429077725287.png",
     })
         .setTimestamp();
@@ -50,7 +50,7 @@ export async function execute(interaction) {
                     .setDescription("Your account has been deleted, we're sorry to see you go!")
                     .setColor("#2b2d31")
                     .setFooter({
-                    text: "Momentum",
+                    text: "LawinServerV2",
                     iconURL: "https://cdn.discordapp.com/app-assets/432980957394370572/1084188429077725287.png",
                 })
                     .setTimestamp();
@@ -63,7 +63,7 @@ export async function execute(interaction) {
                     .setDescription("Your account has not been deleted.")
                     .setColor("#2b2d31")
                     .setFooter({
-                    text: "Momentum",
+                    text: "LawinServerV2",
                     iconURL: "https://cdn.discordapp.com/app-assets/432980957394370572/1084188429077725287.png",
                 })
                     .setTimestamp();
