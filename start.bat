@@ -1,3 +1,3 @@
-:start
+:1
 node index.js
-goto start
+goto 1
