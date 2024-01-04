@@ -1,8 +1,33 @@
 const functions = require("../structs/functions.js");
 const jwt = require("jsonwebtoken");
 
+function createToken(payload, secret, expiresIn, tokenType) {
+    const token = jwt.sign({
+        ...payload,
+        "jti": functions.MakeID().replace(/-/ig, ""),
+        "creation_date": new Date(),
+        "hours_expire": expiresIn
+    }, secret, { expiresIn: `${expiresIn}h` });
+
+    switch (tokenType) {
+        case 'client':
+            global.clientTokens.push({ ip: payload.ip, token: `eg1~${token}` });
+            break;
+        case 'access':
+            global.accessTokens.push({ accountId: payload.sub, token: `eg1~${token}` });
+            break;
+        case 'refresh':
+            global.refreshTokens.push({ accountId: payload.sub, token: `eg1~${token}` });
+            break;
+        default:
+            throw new Error("Invalid token type");
+    }
+
+    return token;
+}
+
 function createClient(clientId, grant_type, ip, expiresIn) {
-    let clientToken = jwt.sign({
+    return createToken({
         "p": Buffer.from(functions.MakeID()).toString("base64"),
         "clsvc": "fortnite",
         "t": "s",
@@ -10,18 +35,12 @@ function createClient(clientId, grant_type, ip, expiresIn) {
         "clid": clientId,
         "ic": true,
         "am": grant_type,
-        "jti": functions.MakeID().replace(/-/ig, ""),
-        "creation_date": new Date(),
-        "hours_expire": expiresIn
-    }, global.JWT_SECRET, { expiresIn: `${expiresIn}h` });
-
-    global.clientTokens.push({ ip: ip, token: `eg1~${clientToken}` });
-
-    return clientToken;
+        "ip": ip
+    }, global.JWT_SECRET, expiresIn, 'client');
 }
 
 function createAccess(user, clientId, grant_type, deviceId, expiresIn) {
-    let accessToken = jwt.sign({
+    return createToken({
         "app": "fortnite",
         "sub": user.accountId,
         "dvid": deviceId,
@@ -34,36 +53,22 @@ function createAccess(user, clientId, grant_type, deviceId, expiresIn) {
         "sec": 1,
         "clsvc": "fortnite",
         "t": "s",
-        "ic": true,
-        "jti": functions.MakeID().replace(/-/ig, ""),
-        "creation_date": new Date(),
-        "hours_expire": expiresIn
-    }, global.JWT_SECRET, { expiresIn: `${expiresIn}h` });
-
-    global.accessTokens.push({ accountId: user.accountId, token: `eg1~${accessToken}` });
-
-    return accessToken;
+        "ic": true
+    }, global.JWT_SECRET, expiresIn, 'access');
 }
 
 function createRefresh(user, clientId, grant_type, deviceId, expiresIn) {
-    let refreshToken = jwt.sign({
+    return createToken({
         "sub": user.accountId,
         "dvid": deviceId,
         "t": "r",
         "clid": clientId,
-        "am": grant_type,
-        "jti": functions.MakeID().replace(/-/ig, ""),
-        "creation_date": new Date(),
-        "hours_expire": expiresIn
-    }, global.JWT_SECRET, { expiresIn: `${expiresIn}h` });
-
-    global.refreshTokens.push({ accountId: user.accountId, token: `eg1~${refreshToken}` });
-
-    return refreshToken;
+        "am": grant_type
+    }, global.JWT_SECRET, expiresIn, 'refresh');
 }
 
 module.exports = {
     createClient,
     createAccess,
     createRefresh
-}
+};
