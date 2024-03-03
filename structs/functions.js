@@ -312,15 +312,16 @@ async function registerUser(discordId, username, email, plainPassword) {
     return { message: `Successfully created an account with the username ${username}`, status: 200 };
 }
 
-async function createSAC(code, accountId, creator) {
-    if (!code || !accountId) return {message: "Code or Owner is required.", status: 400 };
+async function createSAC(code, username, creator) {
+    if (!code || !username) return {message: "Code or Owner is required.", status: 400 };
+
+    const account = await User.findOne({ username })
+    
+    if (account == null) return { message: "That User dosent exist!"}
 
     if (await SaCCodes.findOne({ code })) return { message: "That Code already exist!", status: 400}; 
 
-    const accountIdprofile = (await User.findOne({ accountId }))
-    if (accountIdprofile === null) return { message: "That User dosent exist!", status: 400};
-
-    if (await SaCCodes.findOne({ owner: accountId })) return { message: "That User already has an Code!", status: 400};
+    if (await SaCCodes.findOne({ owner: account.accountId })) return { message: "That User already has an Code!", status: 400};
     const creatorprofile = (await User.findOne({ discordId: creator }))
 
     const allowedCharacters = ("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split("");
@@ -329,7 +330,7 @@ async function createSAC(code, accountId, creator) {
     }
 
     try {
-        await SaCCodes.create({ created: new Date().toISOString(), createdby: creatorprofile.accountId, owner: accountIdprofile.accountId , code, code_lower: code.toLowerCase()})
+        await SaCCodes.create({ created: new Date().toISOString(), createdby: creatorprofile.accountId, owner: account.accountId , code, code_lower: code.toLowerCase()})
     } catch (error) {
         return { message: error, status: 400}
     }

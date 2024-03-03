@@ -15,8 +15,8 @@ module.exports = {
                 type: 3 // string
             },            
             {
-                name: "owner-id",
-                description: "Owner ID of the Code.",
+                name: "owner",
+                description: "InGame Name of the codes owner.",
                 required: true,
                 type: 3
             },
@@ -30,9 +30,9 @@ module.exports = {
         const { options } = interaction;
 
         const code = options.get("code").value;
-        const accountId = options.get("owner-id").value;
+        const username = options.get("owner").value;
         const creator = interaction.user.id;
-        await functions.createSAC(code, accountId, creator).then(resp => {
+        await functions.createSAC(code, username, creator).then(resp => {
 
             if (resp.message == undefined) return interaction.editReply({ content: "There was an unknown error!", ephemeral: true})
 
