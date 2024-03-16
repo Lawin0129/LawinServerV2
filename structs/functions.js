@@ -9,6 +9,7 @@ const User = require("../model/user.js");
 const Profile = require("../model/profiles.js");
 const profileManager = require("../structs/profile.js");
 const Friends = require("../model/friends.js");
+const SaCCodes = require("../model/saccodes.js");
 
 async function sleep(ms) {
     await new Promise((resolve, reject) => {
@@ -279,6 +280,7 @@ async function registerUser(discordId, username, email, plainPassword) {
     if (await User.findOne({ discordId })) return { message: "You already created an account!", status: 400 };
 
     const accountId = MakeID().replace(/-/ig, "");
+    const matchmakingId = MakeID().replace(/-/ig, "");
 
     // filters
     const emailFilter = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
@@ -297,7 +299,7 @@ async function registerUser(discordId, username, email, plainPassword) {
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     try {
-        await User.create({ created: new Date().toISOString(), discordId, accountId, username, username_lower: username.toLowerCase(), email, password: hashedPassword }).then(async (i) => {
+        await User.create({ created: new Date().toISOString(), discordId, accountId, username, username_lower: username.toLowerCase(), email, password: hashedPassword, matchmakingId }).then(async (i) => {
             await Profile.create({ created: i.created, accountId: i.accountId, profiles: profileManager.createProfiles(i.accountId) });
             await Friends.create({ created: i.created, accountId: i.accountId });
         });
@@ -308,6 +310,32 @@ async function registerUser(discordId, username, email, plainPassword) {
     };
 
     return { message: `Successfully created an account with the username ${username}`, status: 200 };
+}
+
+async function createSAC(code, username, creator) {
+    if (!code || !username) return {message: "Code or Owner is required.", status: 400 };
+
+    const account = await User.findOne({ username })
+    
+    if (account == null) return { message: "That User dosent exist!"}
+
+    if (await SaCCodes.findOne({ code })) return { message: "That Code already exist!", status: 400}; 
+
+    if (await SaCCodes.findOne({ owner: account.accountId })) return { message: "That User already has an Code!", status: 400};
+    const creatorprofile = (await User.findOne({ discordId: creator }))
+
+    const allowedCharacters = ("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~").split("");
+    for (let character of allowedCharacters) {
+        if (!allowedCharacters.includes(character)) return { message: "The Code has special Characters!", status: 400 };
+    }
+
+    try {
+        await SaCCodes.create({ created: new Date().toISOString(), createdby: creatorprofile.accountId, owner: account.accountId , code, code_lower: code.toLowerCase()})
+    } catch (error) {
+        return { message: error, status: 400}
+    }
+
+    return { message: "You successfully created an Support-a-Creator Code!", status: 200}
 }
 
 function DecodeBase64(str) {
@@ -333,6 +361,7 @@ module.exports = {
     sendXmppMessageToId,
     getPresenceFromUser,
     registerUser,
+    createSAC,
     DecodeBase64,
     UpdateTokens
 }

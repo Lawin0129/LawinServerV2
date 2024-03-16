@@ -7,6 +7,8 @@ const { verifyToken, verifyClient } = require("../tokenManager/tokenVerify.js");
 
 const config = JSON.parse(fs.readFileSync("./Config/config.json").toString());
 
+const functions = require("../structs/functions.js");
+
 app.post("/fortnite/api/game/v2/chat/*/*/*/pc", (req, res) => {
     let resp = config.chat.EnableGlobalChat ? { "GlobalChatRooms": [{ "roomName": "lawinserverglobal" }] } : {};
 
@@ -58,8 +60,15 @@ app.get("/launcher/api/public/assets/*", async (req, res) => {
 
 app.get("/Builds/Fortnite/Content/CloudDir/*.manifest", async (req, res) => {
     res.set("Content-Type", "application/octet-stream")
+    const ver = functions.GetVersionInfo(req)
+    var manifest;
 
-    const manifest = fs.readFileSync(path.join(__dirname, "..", "responses", "CloudDir", "LawinServer.manifest"));
+    if (ver.build >= 28) {
+        manifest = fs.readFileSync(path.join(__dirname, "..", "responses", "CloudDir", "LawinServerNew.manifest"));
+    } else {
+        manifest = fs.readFileSync(path.join(__dirname, "..", "responses", "CloudDir", "LawinServer.manifest"));
+    }
+
 
     res.status(200).send(manifest).end();
 })

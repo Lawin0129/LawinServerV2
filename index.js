@@ -35,6 +35,8 @@ global.clientTokens = tokens.clientTokens;
 
 global.exchangeCodes = [];
 
+mongoose.set('strictQuery', false);
+
 mongoose.connect(config.mongodb.database, () => {
     log.backend("App successfully connected to MongoDB!");
 });
@@ -56,7 +58,9 @@ app.listen(PORT, () => {
     log.backend(`App started listening on port ${PORT}`);
 
     require("./xmpp/xmpp.js");
+    if(config.discord.useDiscordBot === true) {
     require("./DiscordBot");
+    };
 }).on("error", async (err) => {
     if (err.code == "EADDRINUSE") {
         log.error(`Port ${PORT} is already in use!\nClosing in 3 seconds...`);
@@ -66,7 +70,13 @@ app.listen(PORT, () => {
 });
 
 // if endpoint not found, return this error
+const loggedUrls = new Set();
 app.use((req, res, next) => {
+    const url = req.originalUrl;
+    if (loggedUrls.has(url)) {
+        return next();
+    }
+    console.log(`Missing endpoint: ${req.method} ${url} request port ${req.socket.localPort}`)
     error.createError(
         "errors.com.epicgames.common.not_found", 
         "Sorry the resource you were trying to find could not be found", 
