@@ -52,6 +52,10 @@ fs.readdirSync("./routes").forEach(fileName => {
     app.use(require(`./routes/${fileName}`));
 });
 
+app.get("/unknown", (req, res) => {
+    res.json({ msg: "lawinserver epicgames any" });
+})
+
 app.listen(PORT, () => {
     log.backend(`App started listening on port ${PORT}`);
 
