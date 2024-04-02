@@ -1503,12 +1503,6 @@ app.post("/fortnite/api/game/v2/profile/:accountId/dedicated_server/:operation",
     
     let profile = profiles.profiles[req.query.profileId];
 
-    if (req.query.profileId != "athena") return error.createError(
-        "errors.com.epicgames.modules.profiles.invalid_command",
-        `dedicated_server is not valid on ${req.query.profileId} profile`, 
-        ["dedicated_server",req.query.profileId], 12801, undefined, 400, res
-    );
-
     let ApplyProfileChanges = [];
     let BaseRevision = profile.rvn;
     let QueryRevision = req.query.rvn || -1;
