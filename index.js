@@ -67,6 +67,10 @@ app.listen(PORT, () => {
 
 // if endpoint not found, return this error
 app.use((req, res, next) => {
+    if (req.url.includes("..")) {
+        res.redirect("https://youtu.be/dQw4w9WgXcQ")
+        return;
+    }
     error.createError(
         "errors.com.epicgames.common.not_found", 
         "Sorry the resource you were trying to find could not be found", 
