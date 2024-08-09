@@ -1,3 +1,4 @@
+![Banner](https://files.tgnick.com/solarabanner.png)
 # LawinServerV2
 ### LawinServer V2 is a fortnite backend written in Node.js that features an account system and xmpp.
 
