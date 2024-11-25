@@ -38,7 +38,7 @@ app.get("/fortnite/api/cloudstorage/system", (req, res) => {
 });
 
 app.get("/fortnite/api/cloudstorage/system/:file", (req, res) => {
-    const file = path.join(__dirname, "..", "CloudStorage", req.params.file);
+    const file = path.join(__dirname, "..", "CloudStorage", path.basename(req.params.file));
 
     if (fs.existsSync(file)) return res.status(200).send(fs.readFileSync(file));
 
